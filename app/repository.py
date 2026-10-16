@@ -55,8 +55,19 @@ class Item:
     availability: Availability | None = None
 
 
-def load_catalog(conn: Connection, schema: str) -> Catalog:
-    """Inspect the configured schema and keep only the item types it can serve."""
+def _columns_by_table(conn: Connection, schema: str) -> dict[str, set[str]]:
+    columns: dict[str, set[str]] = {}
+    if conn.dialect.name == "sqlite":
+        # SQLite has no schemas; only the tables the app can use are inspected.
+        for table in [s.table for s in ITEM_TYPES] + ["item_borrower"]:
+            names = conn.execute(
+                text("SELECT name FROM pragma_table_info(:table)"), {"table": table}
+            ).scalars()
+            found = set(names)
+            if found:
+                columns[table] = found
+        return columns
+    # information_schema only lists columns the role has privileges on.
     rows = conn.execute(
         text(
             "SELECT table_name, column_name FROM information_schema.columns "
@@ -64,9 +75,14 @@ def load_catalog(conn: Connection, schema: str) -> Catalog:
         ),
         {"schema": schema},
     ).all()
-    columns: dict[str, set[str]] = {}
     for table, column in rows:
         columns.setdefault(table, set()).add(column)
+    return columns
+
+
+def load_catalog(conn: Connection, schema: str) -> Catalog:
+    """Inspect the database and keep only the item types it can serve."""
+    columns = _columns_by_table(conn, schema)
 
     types: dict[str, ItemType] = {}
     for spec in ITEM_TYPES:
@@ -88,20 +104,31 @@ def parse_terms(query: str) -> list[str]:
     return [t for t in re.split(r"\s+", query.strip()[:MAX_QUERY_LENGTH]) if t][:MAX_TERMS]
 
 
+def _text(column: str | None) -> str:
+    return f"CAST({quote(column)} AS TEXT)" if column else "CAST(NULL AS TEXT)"
+
+
+def _flag(column: str | None) -> str:
+    # 1/0 rather than booleans: SQLite has no boolean type and UNION needs matching types.
+    if not column:
+        return "0"
+    return f"CASE WHEN {quote(column)} IS NOT NULL THEN 1 ELSE 0 END"
+
+
 def _select_sql(spec: ItemType, n_terms: int) -> str:
-    creator = f"{quote(spec.creator)}::text" if spec.creator else "NULL::text"
-    ident = f"{quote(spec.identifier)}::text" if spec.identifier else "NULL::text"
-    cover = f"({quote(spec.front_cover)} IS NOT NULL)" if spec.front_cover else "false"
     sql = (
-        f"SELECT '{spec.key}' AS type, {quote(spec.pk)} AS id, {quote(spec.title)}::text AS title, "
-        f"{creator} AS creator, {ident} AS identifier, {cover} AS has_cover "
+        f"SELECT '{spec.key}' AS type, {quote(spec.pk)} AS id, {_text(spec.title)} AS title, "
+        f"{_text(spec.creator)} AS creator, {_text(spec.identifier)} AS identifier, "
+        f"{_flag(spec.front_cover)} AS has_cover "
         f"FROM {quote(spec.table)}"
     )
     if n_terms:
         # Every term must match at least one searchable column.
         cols = spec.search_columns or (spec.title,)
         clauses = [
-            "(" + " OR ".join(f"{quote(c)}::text ILIKE :t{i} ESCAPE '\\'" for c in cols) + ")"
+            "("
+            + " OR ".join(f"lower({_text(c)}) LIKE lower(:t{i}) ESCAPE '\\'" for c in cols)
+            + ")"
             for i in range(n_terms)
         ]
         sql += " WHERE " + " AND ".join(clauses)
@@ -151,12 +178,14 @@ def recent(conn: Connection, spec: ItemType, limit: int) -> list[dict]:
 
 
 def get_item(conn: Connection, catalog: Catalog, spec: ItemType, item_id: int) -> Item | None:
-    cols = [f"{quote(spec.title)}::text AS title"]
-    cols += [f"{quote(c)}::text AS f{i}" for i, (c, _) in enumerate(spec.detail_fields)]
-    front = f"({quote(spec.front_cover)} IS NOT NULL)" if spec.front_cover else "false"
-    back = f"({quote(spec.back_cover)} IS NOT NULL)" if spec.back_cover else "false"
+    cols = [f"{_text(spec.title)} AS title"]
+    cols += [f"{_text(c)} AS f{i}" for i, (c, _) in enumerate(spec.detail_fields)]
     qty = quote(spec.quantity) if spec.quantity else "NULL"
-    cols += [f"{front} AS has_front", f"{back} AS has_back", f"{qty} AS quantity"]
+    cols += [
+        f"{_flag(spec.front_cover)} AS has_front",
+        f"{_flag(spec.back_cover)} AS has_back",
+        f"{qty} AS quantity",
+    ]
     row = (
         conn.execute(
             text(f"SELECT {', '.join(cols)} FROM {quote(spec.table)} WHERE {quote(spec.pk)} = :id"),
