@@ -6,3 +6,6 @@ services:
     ports:
       - "127.0.0.1:8000:8000"
     restart: unless-stopped
+    # For SQLite, mount the database file read-only and set BIBLIOTEQ_DB_URL=sqlite:////data/biblioteq.sqlite
+    # volumes:
+    #   - /path/to/biblioteq.sqlite:/data/biblioteq.sqlite:ro

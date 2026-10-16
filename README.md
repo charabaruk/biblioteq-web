@@ -2,7 +2,8 @@
 
 A read-only web browser for [BiblioteQ](https://github.com/textbrowser/biblioteq) library collections.
 
-It connects to an existing BiblioteQ PostgreSQL database using a dedicated read-only role and lets users
+It connects to an existing BiblioteQ database, either PostgreSQL (using a dedicated read-only role) or
+SQLite (opened read-only), and lets users
 search and browse books, DVDs, CDs, journals, magazines, video games, grey literature and photograph
 collections, view item details and availability, and see cover images.
 
@@ -17,7 +18,7 @@ designed to run behind a reverse proxy such as nginx.
 
 ## Quick start
 
-Requires Python 3.11+ and a BiblioteQ PostgreSQL database.
+Requires Python 3.11+ and a BiblioteQ PostgreSQL or SQLite database.
 
 1. Create the read-only role: adapt and run [docs/deploy/readonly-role.sql](docs/deploy/readonly-role.sql).
 2. Install and configure:
@@ -43,11 +44,11 @@ All settings are environment variables; see [.env.example](.env.example).
 
 | Variable | Default | Purpose |
 | --- | --- | --- |
-| `BIBLIOTEQ_DB_URL` | required | SQLAlchemy URL, e.g. `postgresql+psycopg://user:pw@host/db` |
-| `BIBLIOTEQ_DB_SCHEMA` | `public` | Schema containing the BiblioteQ tables |
+| `BIBLIOTEQ_DB_URL` | required | `postgresql+psycopg://user:pw@host/db` or `sqlite:////absolute/path/biblioteq.sqlite` |
+| `BIBLIOTEQ_DB_SCHEMA` | `public` | PostgreSQL only: schema containing the BiblioteQ tables |
 | `BIBLIOTEQ_PAGE_SIZE` | `24` | Results per page (max 100) |
 | `BIBLIOTEQ_DB_POOL_SIZE` / `BIBLIOTEQ_DB_MAX_OVERFLOW` | `5` / `5` | Connection pool per worker |
-| `BIBLIOTEQ_DB_STATEMENT_TIMEOUT_MS` | `5000` | Per-statement timeout |
+| `BIBLIOTEQ_DB_STATEMENT_TIMEOUT_MS` | `5000` | PostgreSQL statement timeout; SQLite busy timeout |
 | `BIBLIOTEQ_SITE_TITLE` | `Library Collection` | Title shown in the UI |
 | `BIBLIOTEQ_LOG_LEVEL` | `INFO` | Python log level |
 | `BIBLIOTEQ_ROOT_PATH` | empty | URL prefix when served under a sub-path |
