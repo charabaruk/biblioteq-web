@@ -1,4 +1,4 @@
-"""Integration tests against a real PostgreSQL database (see conftest.py)."""
+"""Integration tests run against SQLite and PostgreSQL (see conftest.py)."""
 
 from sqlalchemy import text
 from sqlalchemy.exc import DBAPIError
@@ -95,10 +95,9 @@ def test_health(client):
     assert client.get("/readyz").json() == {"status": "ready"}
 
 
-def test_connection_is_read_only(db_url):
+def test_connection_is_read_only(configured):
     from app.db import get_engine
 
-    get_engine.cache_clear()
     with get_engine().connect() as conn:
         try:
             conn.execute(text("DELETE FROM book"))
