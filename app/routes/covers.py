@@ -1,5 +1,7 @@
-"""Cover image endpoint. Images are stored as BYTEA in the database."""
+"""Cover image endpoint. Images are stored in BLOB/BYTEA columns."""
 
+import base64
+import binascii
 import hashlib
 import zlib
 from typing import Literal
@@ -31,17 +33,27 @@ def sniff(data: bytes) -> str | None:
 
 
 def decode_image(data: bytes) -> tuple[bytes, str] | None:
-    """Return image bytes and MIME type, unwrapping Qt's qCompress format if present."""
+    """Return image bytes and MIME type; stored images may be raw, base64 or qCompress-wrapped."""
     mime = sniff(data)
     if mime:
         return data, mime
-    # qCompress: 4-byte big-endian length followed by a zlib stream.
     try:
-        inflated = zlib.decompress(data[4:])
-    except zlib.error:
-        return None
-    mime = sniff(inflated)
-    return (inflated, mime) if mime else None
+        decoded = base64.b64decode(data, validate=False)
+    except binascii.Error:
+        decoded = b""
+    mime = sniff(decoded)
+    if mime:
+        return decoded, mime
+    # qCompress: 4-byte big-endian length followed by a zlib stream.
+    for candidate in (data, decoded):
+        try:
+            inflated = zlib.decompress(candidate[4:])
+        except zlib.error:
+            continue
+        mime = sniff(inflated)
+        if mime:
+            return inflated, mime
+    return None
 
 
 @router.get("/cover/{type_key}/{item_id}")
