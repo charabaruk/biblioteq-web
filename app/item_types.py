@@ -228,6 +228,7 @@ ITEM_TYPES: tuple[ItemType, ...] = (
     ),
 )
 
+
 def quote(name: str) -> str:
     """Quote a registry identifier for SQL; rejects anything that is not a plain name."""
     if not _IDENTIFIER.match(name):
