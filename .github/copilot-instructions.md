@@ -1,0 +1,1 @@
+Follow the rules in [AGENTS.md](../AGENTS.md). In short: read-only access, parameterized SQL, identifiers from the item type registry only, `marc_tags` out of scope, Conventional Commits, ADRs in `docs/arch/decisions/`.
