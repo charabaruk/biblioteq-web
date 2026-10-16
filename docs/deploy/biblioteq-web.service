@@ -1,0 +1,23 @@
+[Unit]
+Description=biblioteq-web (read-only BiblioteQ collection browser)
+After=network.target postgresql.service
+
+[Service]
+User=biblioteq-web
+Group=biblioteq-web
+WorkingDirectory=/opt/biblioteq-web
+EnvironmentFile=/etc/biblioteq-web/env
+ExecStart=/opt/biblioteq-web/.venv/bin/gunicorn app.main:app \
+  --worker-class uvicorn.workers.UvicornWorker \
+  --workers 2 \
+  --bind 127.0.0.1:8000 \
+  --forwarded-allow-ips 127.0.0.1
+Restart=on-failure
+
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+
+[Install]
+WantedBy=multi-user.target
