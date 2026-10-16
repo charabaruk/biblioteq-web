@@ -1,0 +1,8 @@
+# Run behind your own reverse proxy; do not publish the port to untrusted networks.
+services:
+  web:
+    build: .
+    env_file: .env
+    ports:
+      - "127.0.0.1:8000:8000"
+    restart: unless-stopped
