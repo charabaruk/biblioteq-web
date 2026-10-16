@@ -1,6 +1,6 @@
 # ADR-0001: Read-only FastAPI stack with synchronous SQLAlchemy
 
-- Status: Accepted
+- Status: Accepted (PostgreSQL-only parts superseded by ADR-0005)
 - Date: 2026-10-16
 
 ## Context
