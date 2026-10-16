@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}{{ site_title }}{% endblock %}</title>
+  <link rel="stylesheet" href="{{ base }}/static/style.css">
+</head>
+<body>
+<header class="site-header">
+  <a class="brand" href="{{ base }}/">{{ site_title }}</a>
+  <nav>
+    {% for t in types %}<a href="{{ base }}/browse/{{ t.key }}">{{ t.label }}s</a>{% endfor %}
+  </nav>
+  <form action="{{ base }}/search" method="get" class="search-mini" role="search">
+    <input type="search" name="q" placeholder="Search" aria-label="Search" value="{{ q or '' }}">
+  </form>
+</header>
+<main>
+{% block content %}{% endblock %}
+</main>
+</body>
+</html>

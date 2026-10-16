@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% from "_components.html" import card, pagination with context %}
+{% block title %}Search: {{ q }} - {{ site_title }}{% endblock %}
+{% block content %}
+<form action="{{ base }}/search" method="get" class="search-form">
+  <input type="search" name="q" value="{{ q }}" aria-label="Search">
+  <select name="type" aria-label="Item type">
+    <option value="">All types</option>
+    {% for t in types %}<option value="{{ t.key }}" {{ 'selected' if t.key == selected_type }}>{{ t.label }}</option>{% endfor %}
+  </select>
+  <button type="submit">Search</button>
+</form>
+<p class="count">{{ result.total }} result{{ '' if result.total == 1 else 's' }}</p>
+<div class="grid">{% for it in result.items %}{{ card(it, type_labels[it.type]) }}{% endfor %}</div>
+{{ pagination(result, pager) }}
+{% endblock %}

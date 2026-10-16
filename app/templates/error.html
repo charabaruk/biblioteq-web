@@ -1,0 +1,7 @@
+{% extends "base.html" %}
+{% block title %}{{ status }} - {{ site_title }}{% endblock %}
+{% block content %}
+<h1>{{ status }}</h1>
+<p>{{ detail }}</p>
+<p><a href="{{ base }}/">Back to the collection</a></p>
+{% endblock %}

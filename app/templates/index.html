@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% from "_components.html" import card with context %}
+{% block content %}
+<section class="hero">
+  <h1>Search the collection</h1>
+  <form action="{{ base }}/search" method="get" class="search-form">
+    <input type="search" name="q" placeholder="Title, author, ISBN, ISSN..." aria-label="Search" autofocus>
+    <select name="type" aria-label="Item type">
+      <option value="">All types</option>
+      {% for t in types %}<option value="{{ t.key }}">{{ t.label }}</option>{% endfor %}
+    </select>
+    <button type="submit">Search</button>
+  </form>
+</section>
+{% for spec, items in sections %}
+<section>
+  <h2>Recently added: {{ spec.label }}s <a class="more" href="{{ base }}/browse/{{ spec.key }}">Browse all</a></h2>
+  <div class="grid">{% for it in items %}{{ card(it, spec.label) }}{% endfor %}</div>
+</section>
+{% else %}
+<p>No item types are available in the configured database.</p>
+{% endfor %}
+{% endblock %}

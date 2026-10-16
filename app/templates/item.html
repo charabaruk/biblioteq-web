@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}{{ item.title }} - {{ site_title }}{% endblock %}
+{% block content %}
+<article class="detail">
+  <div class="covers">
+    {% if item.has_front %}<img src="{{ base }}/cover/{{ item.spec.key }}/{{ item.id }}?side=front" alt="Front cover of {{ item.title }}">{% endif %}
+    {% if item.has_back %}<img src="{{ base }}/cover/{{ item.spec.key }}/{{ item.id }}?side=back" alt="Back cover of {{ item.title }}">{% endif %}
+    {% if not item.has_front and not item.has_back %}<div class="no-cover">{{ item.spec.label }}</div>{% endif %}
+  </div>
+  <div class="info">
+    <p class="kind"><a href="{{ base }}/browse/{{ item.spec.key }}">{{ item.spec.label }}</a></p>
+    <h1>{{ item.title }}</h1>
+    {% set a = item.availability %}
+    {% if a %}
+    <p class="availability {{ 'in' if a.available else 'out' if a.available == 0 else '' }}">
+      {% if a.available is none %}{{ a.total }} cop{{ 'y' if a.total == 1 else 'ies' }} owned
+      {% elif a.available > 0 %}Available: {{ a.available }} of {{ a.total }}
+      {% else %}All {{ a.total }} cop{{ 'y is' if a.total == 1 else 'ies are' }} checked out{% endif %}
+    </p>
+    {% endif %}
+    <dl>
+      {% for label, value in item.fields %}<dt>{{ label }}</dt><dd>{{ value }}</dd>{% endfor %}
+    </dl>
+  </div>
+</article>
+{% endblock %}
