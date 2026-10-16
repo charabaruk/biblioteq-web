@@ -72,7 +72,7 @@ def load_catalog(conn: Connection, schema: str) -> Catalog:
     for spec in ITEM_TYPES:
         resolved = resolve(spec, columns.get(spec.table, set()))
         if resolved is None:
-            log.warning("Item type %r disabled: table %r missing or incomplete", spec.key, spec.table)
+            log.warning("Item type %r disabled: %r missing or incomplete", spec.key, spec.table)
             continue
         types[spec.key] = resolved
     conn.rollback()
@@ -153,13 +153,18 @@ def recent(conn: Connection, spec: ItemType, limit: int) -> list[dict]:
 def get_item(conn: Connection, catalog: Catalog, spec: ItemType, item_id: int) -> Item | None:
     cols = [f"{quote(spec.title)}::text AS title"]
     cols += [f"{quote(c)}::text AS f{i}" for i, (c, _) in enumerate(spec.detail_fields)]
-    cols.append(f"({quote(spec.front_cover)} IS NOT NULL) AS has_front" if spec.front_cover else "false AS has_front")
-    cols.append(f"({quote(spec.back_cover)} IS NOT NULL) AS has_back" if spec.back_cover else "false AS has_back")
-    cols.append(f"{quote(spec.quantity)} AS quantity" if spec.quantity else "NULL AS quantity")
-    row = conn.execute(
-        text(f"SELECT {', '.join(cols)} FROM {quote(spec.table)} WHERE {quote(spec.pk)} = :id"),
-        {"id": item_id},
-    ).mappings().first()
+    front = f"({quote(spec.front_cover)} IS NOT NULL)" if spec.front_cover else "false"
+    back = f"({quote(spec.back_cover)} IS NOT NULL)" if spec.back_cover else "false"
+    qty = quote(spec.quantity) if spec.quantity else "NULL"
+    cols += [f"{front} AS has_front", f"{back} AS has_back", f"{qty} AS quantity"]
+    row = (
+        conn.execute(
+            text(f"SELECT {', '.join(cols)} FROM {quote(spec.table)} WHERE {quote(spec.pk)} = :id"),
+            {"id": item_id},
+        )
+        .mappings()
+        .first()
+    )
     if row is None:
         conn.rollback()
         return None
