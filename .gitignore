@@ -11,6 +11,7 @@ dist/
 build/
 
 # Environments and secrets
+tmp/
 .venv/
 venv/
 .env
