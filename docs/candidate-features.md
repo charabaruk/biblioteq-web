@@ -26,3 +26,5 @@ This checklist follows the version goals in the [roadmap](roadmap.md). Items lis
 
 - [ ] **Back images on item details:** Show an item's back image when one is available.
 - [ ] **Natural title sorting:** Sort titles naturally in browse and other title-ordered results, so, for example, `Volume 2` precedes `Volume 10`.
+- [ ] **Favicon:** Include the BiblioteQ icon for identifying pages.
+- [ ] **Caching support:** Reduce bandwidth use by checking `ETag` headers before sending files or cover images.
