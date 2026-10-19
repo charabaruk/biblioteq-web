@@ -10,7 +10,7 @@
 <header class="site-header">
   <a class="brand" href="{{ base }}/">{{ site_title }}</a>
   <nav>
-    {% for t in types %}<a href="{{ base }}/browse/{{ t.key }}">{{ t.label }}s</a>{% endfor %}
+    {% for t in types %}<a href="{{ base }}/browse/{{ t.key }}">{{ t.label_plural }}</a>{% endfor %}
   </nav>
   <form action="{{ base }}/search" method="get" class="search-mini" role="search">
     <input type="search" name="q" placeholder="Search" aria-label="Search" value="{{ q or '' }}">

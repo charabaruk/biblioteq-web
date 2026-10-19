@@ -19,6 +19,7 @@ _IDENTIFIER = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
 class ItemType:
     key: str  # URL slug
     label: str  # singular display name
+    label_plural: str  # plural display name
     table: str
     title: str
     creator: str | None = None
@@ -36,6 +37,7 @@ ITEM_TYPES: tuple[ItemType, ...] = (
     ItemType(
         key="book",
         label="Book",
+        label_plural="Books",
         table="book",
         title="title",
         creator="author",
@@ -67,6 +69,7 @@ ITEM_TYPES: tuple[ItemType, ...] = (
     ItemType(
         key="dvd",
         label="DVD",
+        label_plural="DVDs",
         table="dvd",
         title="title",
         creator="dvddirector",
@@ -94,6 +97,7 @@ ITEM_TYPES: tuple[ItemType, ...] = (
     ItemType(
         key="cd",
         label="Music CD",
+        label_plural="Music CDs",
         table="cd",
         title="title",
         creator="artist",
@@ -119,6 +123,7 @@ ITEM_TYPES: tuple[ItemType, ...] = (
     ItemType(
         key="journal",
         label="Journal",
+        label_plural="Journals",
         table="journal",
         title="title",
         creator="publisher",
@@ -144,6 +149,7 @@ ITEM_TYPES: tuple[ItemType, ...] = (
     ItemType(
         key="magazine",
         label="Magazine",
+        label_plural="Magazines",
         table="magazine",
         title="title",
         creator="publisher",
@@ -169,6 +175,7 @@ ITEM_TYPES: tuple[ItemType, ...] = (
     ItemType(
         key="videogame",
         label="Video game",
+        label_plural="Video games",
         table="videogame",
         title="title",
         creator="publisher",
@@ -193,6 +200,7 @@ ITEM_TYPES: tuple[ItemType, ...] = (
     ItemType(
         key="greyliterature",
         label="Grey literature",
+        label_plural="Grey literature",
         table="grey_literature",
         title="document_title",
         creator="author",
@@ -212,6 +220,7 @@ ITEM_TYPES: tuple[ItemType, ...] = (
     ItemType(
         key="photograph",
         label="Photograph collection",
+        label_plural="Photograph collections",
         table="photograph_collection",
         title="title",
         identifier="id",

@@ -14,7 +14,7 @@
 </section>
 {% for spec, items in sections %}
 <section>
-  <h2>Recently added: {{ spec.label }}s <a class="more" href="{{ base }}/browse/{{ spec.key }}">Browse all</a></h2>
+  <h2>Recently added: {{ spec.label_plural }} <a class="more" href="{{ base }}/browse/{{ spec.key }}">Browse all</a></h2>
   <div class="grid">{% for it in items %}{{ card(it, spec.label) }}{% endfor %}</div>
 </section>
 {% else %}
