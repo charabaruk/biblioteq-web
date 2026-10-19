@@ -85,6 +85,9 @@ database. Without that variable they are skipped.
 
 Architecture documentation is in [docs/arch/](docs/arch/).
 
+Project planning: [roadmap](docs/roadmap.md) and [candidate features](docs/candidate-features.md).
+
 ## License
 
 [MIT](LICENSE)
+
