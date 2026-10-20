@@ -18,9 +18,24 @@
       {% else %}All {{ a.total }} cop{{ 'y is' if a.total == 1 else 'ies are' }} checked out{% endif %}
     </p>
     {% endif %}
-    <dl>
-      {% for label, value in item.fields %}<dt>{{ label }}</dt><dd>{{ value }}</dd>{% endfor %}
-    </dl>
+    {% set multi = item.tabs|length > 1 %}
+    {% if multi %}
+    <nav class="tab-nav" data-tabs aria-label="Item sections">
+      {% for tab in item.tabs %}<a href="#tab-{{ tab.key }}" data-tab="{{ tab.key }}">{{ tab.label }}</a>{% endfor %}
+    </nav>
+    {% endif %}
+    {% for tab in item.tabs %}
+    <section id="tab-{{ tab.key }}" class="tab-panel"
+      {%- if tab.sections is none %} data-src="{{ base }}/item/{{ spec.key }}/{{ item.id }}/{{ tab.key }}"{% endif %}>
+      {% if multi %}<h2 class="tab-title">{{ tab.label }}</h2>{% endif %}
+      <div class="tab-body">
+        {% if tab.sections is none %}
+        <p><a href="{{ base }}/item/{{ spec.key }}/{{ item.id }}/{{ tab.key }}">Show {{ tab.label }}</a></p>
+        {% else %}{% include "item/_body.html" %}{% endif %}
+      </div>
+    </section>
+    {% endfor %}
   </div>
 </article>
+{% if item.tabs|length > 1 %}<script src="{{ base }}/static/tabs.js" defer></script>{% endif %}
 {% endblock %}

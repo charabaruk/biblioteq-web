@@ -6,7 +6,17 @@ from dataclasses import dataclass, field
 
 from sqlalchemy import Connection, text
 
-from app.item_types import ITEM_TYPES, ItemType, quote, resolve
+from app.item_types import (
+    ITEM_TYPES,
+    FieldsSection,
+    ItemType,
+    TableSection,
+    TabSpec,
+    TextSection,
+    quote,
+    related_tables,
+    resolve,
+)
 
 log = logging.getLogger(__name__)
 
@@ -45,11 +55,29 @@ class Availability:
 
 
 @dataclass
+class Section:
+    kind: str  # "fields", "text" or "table"; selects the sections/ partial
+    label: str
+    fields: list[tuple[str, str]] = field(default_factory=list)
+    text: str = ""
+    headers: list[str] = field(default_factory=list)
+    groups: list[tuple[str | None, list[list[str]]]] = field(default_factory=list)
+
+
+@dataclass
+class Tab:
+    key: str
+    label: str
+    template: str | None
+    sections: list[Section]
+
+
+@dataclass
 class Item:
     spec: ItemType
     id: int
     title: str
-    fields: list[tuple[str, str]] = field(default_factory=list)
+    tabs: list[Tab] = field(default_factory=list)
     has_front: bool = False
     has_back: bool = False
     availability: Availability | None = None
@@ -59,7 +87,11 @@ def _columns_by_table(conn: Connection, schema: str) -> dict[str, set[str]]:
     columns: dict[str, set[str]] = {}
     if conn.dialect.name == "sqlite":
         # SQLite has no schemas; only the tables the app can use are inspected.
-        for table in [s.table for s in ITEM_TYPES] + ["item_borrower"]:
+        for table in (
+            [s.table for s in ITEM_TYPES]
+            + [t for s in ITEM_TYPES for t in related_tables(s)]
+            + ["item_borrower"]
+        ):
             names = conn.execute(
                 text("SELECT name FROM pragma_table_info(:table)"), {"table": table}
             ).scalars()
@@ -86,7 +118,7 @@ def load_catalog(conn: Connection, schema: str) -> Catalog:
 
     types: dict[str, ItemType] = {}
     for spec in ITEM_TYPES:
-        resolved = resolve(spec, columns.get(spec.table, set()))
+        resolved = resolve(spec, columns.get(spec.table, set()), columns)
         if resolved is None:
             log.warning("Item type %r disabled: %r missing or incomplete", spec.key, spec.table)
             continue
@@ -177,11 +209,92 @@ def recent(conn: Connection, spec: ItemType, limit: int) -> list[dict]:
     return items
 
 
-def get_item(conn: Connection, catalog: Catalog, spec: ItemType, item_id: int) -> Item | None:
-    cols = [f"{_text(spec.title)} AS title"]
-    cols += [f"{_text(c)} AS f{i}" for i, (c, _) in enumerate(spec.detail_fields)]
+def _clean(value: str | None) -> str:
+    return value.strip() if value else ""
+
+
+def _own_value(value: str | None) -> str:
+    # "N/A" is a placeholder in BiblioteQ data, not content.
+    cleaned = _clean(value)
+    return "" if cleaned == "N/A" else cleaned
+
+
+def _own_values(conn: Connection, spec: ItemType, tab: TabSpec, item_id: int) -> dict[str, str]:
+    """Values of every column the tab's own-table sections read, in one query."""
+    names: list[str] = []
+    for section in tab.sections:
+        if isinstance(section, FieldsSection):
+            names += [c for c, _ in section.fields]
+        elif isinstance(section, TextSection):
+            names.append(section.column)
+    names = list(dict.fromkeys(names))
+    if not names:
+        return {}
+    cols = ", ".join(f"{_text(c)} AS c{i}" for i, c in enumerate(names))
+    row = (
+        conn.execute(
+            text(f"SELECT {cols} FROM {quote(spec.table)} WHERE {quote(spec.pk)} = :id"),
+            {"id": item_id},
+        )
+        .mappings()
+        .first()
+    )
+    if row is None:
+        return {}
+    return {c: _own_value(row[f"c{i}"]) for i, c in enumerate(names)}
+
+
+def _table_section(conn: Connection, section: TableSection, item_id: int) -> Section | None:
+    names = [c for c, _ in section.columns]
+    if section.group_by and section.group_by not in names:
+        names.append(section.group_by)
+    cols = ", ".join(f"{_text(c)} AS c{i}" for i, c in enumerate(names))
+    sql = f"SELECT {cols} FROM {quote(section.table)} WHERE {quote(section.fk)} = :id"
+    if section.order_by:
+        sql += " ORDER BY " + ", ".join(quote(c) for c in section.order_by)
+    rows = conn.execute(text(sql + " LIMIT :limit"), {"id": item_id, "limit": section.limit}).all()
+    if not rows:
+        return None
+
+    index = {c: i for i, c in enumerate(names)}
+    groups: list[tuple[str | None, list[list[str]]]] = []
+    for row in rows:
+        heading = None
+        if section.group_by:
+            heading = f"{section.group_label} {_clean(row[index[section.group_by]])}".strip()
+        if not groups or groups[-1][0] != heading:
+            groups.append((heading, []))
+        groups[-1][1].append([_clean(row[index[c]]) for c, _ in section.columns])
+    return Section("table", section.label, headers=[h for _, h in section.columns], groups=groups)
+
+
+def _load_sections(conn: Connection, spec: ItemType, tab: TabSpec, item_id: int) -> list[Section]:
+    values = _own_values(conn, spec, tab, item_id)
+    sections: list[Section] = []
+    for s in tab.sections:
+        if isinstance(s, FieldsSection):
+            pairs = [(label, values[c]) for c, label in s.fields if values.get(c)]
+            if pairs:
+                sections.append(Section("fields", "", fields=pairs))
+        elif isinstance(s, TextSection):
+            if values.get(s.column):
+                sections.append(Section("text", s.label, text=values[s.column]))
+        elif built := _table_section(conn, s, item_id):
+            sections.append(built)
+    return sections
+
+
+def get_item(
+    conn: Connection,
+    catalog: Catalog,
+    spec: ItemType,
+    item_id: int,
+    load: str | None = None,
+) -> Item | None:
+    """Load an item; lazy tabs stay unloaded unless named by `load`."""
     qty = quote(spec.quantity) if spec.quantity else "NULL"
-    cols += [
+    cols = [
+        f"{_text(spec.title)} AS title",
         f"{_flag(spec.front_cover)} AS has_front",
         f"{_flag(spec.back_cover)} AS has_back",
         f"{qty} AS quantity",
@@ -202,18 +315,34 @@ def get_item(conn: Connection, catalog: Catalog, spec: ItemType, item_id: int) -
         spec=spec,
         id=item_id,
         title=row["title"] or "(untitled)",
-        fields=[
-            (label, row[f"f{i}"].strip())
-            for i, (_, label) in enumerate(spec.detail_fields)
-            if row[f"f{i}"] and row[f"f{i}"].strip()
-        ],
         has_front=bool(row["has_front"]),
         has_back=bool(row["has_back"]),
     )
+    for tab in spec.tabs:
+        loaded = not tab.lazy or tab.key == load
+        sections = _load_sections(conn, spec, tab, item_id) if loaded else None
+        if sections == [] and not tab.lazy:
+            continue  # nothing to show for this item
+        item.tabs.append(Tab(tab.key, tab.label, tab.template, sections))
     if spec.quantity and row["quantity"] is not None:
         item.availability = _availability(conn, catalog, spec, item_id, int(row["quantity"]))
     conn.rollback()
     return item
+
+
+def get_tab(conn: Connection, spec: ItemType, item_id: int, tab_key: str) -> Tab | None:
+    """One tab's content; None if the tab or the item does not exist."""
+    tab = next((t for t in spec.tabs if t.key == tab_key), None)
+    if tab is None:
+        return None
+    exists = conn.execute(
+        text(f"SELECT 1 FROM {quote(spec.table)} WHERE {quote(spec.pk)} = :id"), {"id": item_id}
+    ).first()
+    result = None
+    if exists:
+        result = Tab(tab.key, tab.label, tab.template, _load_sections(conn, spec, tab, item_id))
+    conn.rollback()
+    return result
 
 
 def _availability(

@@ -67,6 +67,20 @@ dl { display: grid; grid-template-columns: max-content 1fr; gap: 0.4rem 1.25rem;
 dt { color: var(--muted); }
 dd { margin: 0; white-space: pre-wrap; }
 
+.prose h3 { margin: 1rem 0 0.25rem; }
+.prose p { margin: 0 0 1rem; white-space: pre-wrap; }
+
+.rows h3 { margin: 1rem 0 0.25rem; }
+.rows h4 { margin: 0.75rem 0 0.25rem; color: var(--muted); }
+.rows table { border-collapse: collapse; width: 100%; margin-bottom: 0.75rem; }
+.rows th, .rows td { text-align: left; padding: 0.25rem 0.75rem 0.25rem 0; border-bottom: 1px solid var(--border); }
+
+.tab-nav { display: flex; flex-wrap: wrap; gap: 0.25rem; margin: 1rem 0 0.5rem; border-bottom: 1px solid var(--border); }
+.tab-nav a { padding: 0.4rem 0.9rem; border: 1px solid transparent; border-bottom: 0; border-radius: 4px 4px 0 0; color: inherit; }
+.tab-nav a[aria-selected=true] { background: var(--card); border-color: var(--border); font-weight: 600; }
+.tabs-ready .tab-title { display: none; }
+.tab-panel[hidden] { display: none; }
+
 @media (max-width: 640px) {
   .detail { grid-template-columns: 1fr; }
 }

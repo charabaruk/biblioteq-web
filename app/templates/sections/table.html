@@ -1,0 +1,12 @@
+<section class="rows">
+  <h3>{{ section.label }}</h3>
+  {% for heading, rows in section.groups %}
+  {% if heading %}<h4>{{ heading }}</h4>{% endif %}
+  <table>
+    <thead><tr>{% for h in section.headers %}<th scope="col">{{ h }}</th>{% endfor %}</tr></thead>
+    <tbody>
+      {% for row in rows %}<tr>{% for cell in row %}<td>{{ cell }}</td>{% endfor %}</tr>{% endfor %}
+    </tbody>
+  </table>
+  {% endfor %}
+</section>
