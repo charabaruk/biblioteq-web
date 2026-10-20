@@ -213,6 +213,12 @@ def _clean(value: str | None) -> str:
     return value.strip() if value else ""
 
 
+def _own_value(value: str | None) -> str:
+    # "N/A" is a placeholder in BiblioteQ data, not content.
+    cleaned = _clean(value)
+    return "" if cleaned == "N/A" else cleaned
+
+
 def _own_values(conn: Connection, spec: ItemType, tab: TabSpec, item_id: int) -> dict[str, str]:
     """Values of every column the tab's own-table sections read, in one query."""
     names: list[str] = []
@@ -235,7 +241,7 @@ def _own_values(conn: Connection, spec: ItemType, tab: TabSpec, item_id: int) ->
     )
     if row is None:
         return {}
-    return {c: _clean(row[f"c{i}"]) for i, c in enumerate(names)}
+    return {c: _own_value(row[f"c{i}"]) for i, c in enumerate(names)}
 
 
 def _table_section(conn: Connection, section: TableSection, item_id: int) -> Section | None:

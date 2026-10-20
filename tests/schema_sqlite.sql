@@ -30,6 +30,10 @@ INSERT INTO item_borrower (item_oid, type, memberid) VALUES (1, 'Book', 'M1'), (
 UPDATE book SET description = 'A comic <i>space</i> opera.' || char(10) || 'Second line.'
 WHERE isbn13 = '9780345391803';
 
+-- Placeholder values that must be treated as empty; "N/A Station" is real content.
+UPDATE book SET description = '  N/A  ', edition = 'N/A', place = 'N/A Station'
+WHERE isbn13 = '9780000000019';
+
 -- Inserted out of order on purpose.
 INSERT INTO book_note (item_oid, grp, seq, note) VALUES
  (1, 2, 2, 'Four'), (1, 1, 2, 'Two'), (1, 2, 1, 'Three'), (1, 1, 1, 'One');

@@ -28,6 +28,14 @@ def test_empty_text_section_is_omitted(client):
     assert 'class="prose"' not in html
 
 
+def test_na_placeholder_is_treated_as_empty(client):
+    html = client.get("/item/book/3").text
+    assert "Description" not in html
+    assert "Edition" not in html
+    assert ">N/A<" not in html
+    assert "N/A Station" in html
+
+
 def test_single_tab_shows_no_tab_list(client):
     html = client.get("/item/book/1").text
     assert "tab-title" not in html
