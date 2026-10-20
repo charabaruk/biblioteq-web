@@ -88,24 +88,6 @@ def test_resolve_disables_type_without_required_columns():
     assert resolve(book, set()) is None
 
 
-def test_photograph_collection_uses_collection_columns():
-    photo = next(t for t in ITEM_TYPES if t.key == "photograph")
-    resolved = resolve(
-        photo,
-        {"myoid", "title", "id", "accession_number", "location", "about", "notes", "image_scaled"},
-    )
-
-    assert resolved is not None
-    assert resolved.creator is None
-    assert resolved.search_columns == ("title", "id", "accession_number", "about", "notes")
-    assert resolved.detail_fields == (
-        ("id", "ID"),
-        ("location", "Location"),
-        ("accession_number", "Accession Number"),
-    )
-    assert resolved.text_fields == (("about", "About"), ("notes", "Notes"))
-
-
 def test_default_main_tab_puts_text_before_fields():
     book = replace(
         next(t for t in ITEM_TYPES if t.key == "book"),

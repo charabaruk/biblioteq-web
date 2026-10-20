@@ -162,27 +162,47 @@ ITEM_TYPES: tuple[ItemType, ...] = (
         identifier="id",
         identifier_label="UPC",
         search_columns=("title", "id", "dvdactor", "dvddirector", "studio", "category", "keyword"),
-        detail_fields=(
-            ("dvdformat", "Format"),
-            ("studio", "Studio"),
-            ("rdate", "Release Date"),
-            ("dvddiskcount", "Number of Discs"),
-            ("dvdrunning", "Runtime"),
-            ("category", "Categories"),
-            ("language", "Language"),
-            ("id", "UPC"),
-            ("price", "Price"),
-            ("monetary_units", "Monetary Units"),
-            ("location", "Location"),
-            ("dvdrating", "Rating"),
-            ("dvdregion", "Region"),
-            ("dvdaspectratio", "Aspect Ratio"),
-            ("accession_number", "Accession Number"),
-            ("dvddirector", "Director"),
-            ("dvdactor", "Actors"),
-            ("keyword", "Keywords"),
+        tabs=(
+            TabSpec(
+                key="main",
+                label="Main",
+                sections=(
+                    TextSection("description", "Description"),
+                    FieldsSection(
+                        (
+                            ("dvdformat", "Format"),
+                            ("studio", "Studio"),
+                            ("rdate", "Release Date"),
+                            ("dvddiskcount", "Number of Discs"),
+                            ("dvdrunning", "Runtime"),
+                            ("category", "Categories"),
+                            ("language", "Language"),
+                            ("location", "Location"),
+                            ("dvdrating", "Rating"),
+                            ("dvdregion", "Region"),
+                            ("dvdaspectratio", "Aspect Ratio"),
+                            ("dvddirector", "Director"),
+                            ("dvdactor", "Actors"),
+                        )
+                    ),
+                ),
+            ),
+            TabSpec(
+                key="details",
+                label="Details",
+                sections=(
+                    FieldsSection(
+                        (
+                            ("id", "UPC"),
+                            ("price", "Price"),
+                            ("monetary_units", "Monetary Units"),
+                            ("accession_number", "Accession Number"),
+                            ("keyword", "Keywords"),
+                        )
+                    ),
+                ),
+            ),
         ),
-        text_fields=(("description", "Description"),),
         quantity="quantity",
         borrower_type="DVD",
         front_cover="front_cover",
@@ -198,24 +218,44 @@ ITEM_TYPES: tuple[ItemType, ...] = (
         identifier="id",
         identifier_label="Catalogue Number",
         search_columns=("title", "artist", "id", "recording_label", "category"),
-        detail_fields=(
-            ("artist", "Artist"),
-            ("cdformat", "Format"),
-            ("recording_label", "Recording Label"),
-            ("rdate", "Release Date"),
-            ("cddiskcount", "Number of Discs"),
-            ("cdruntime", "Runtime"),
-            ("category", "Categories"),
-            ("language", "Language"),
-            ("id", "Catalogue Number"),
-            ("price", "Price"),
-            ("monetary_units", "Monetary Units"),
-            ("location", "Location"),
-            ("cdaudio", "Audio"),
-            ("accession_number", "Accession Number"),
-            ("keyword", "Keywords"),
+        tabs=(
+            TabSpec(
+                key="main",
+                label="Main",
+                sections=(
+                    TextSection("description", "Description"),
+                    FieldsSection(
+                        (
+                            ("artist", "Artist"),
+                            ("cdformat", "Format"),
+                            ("recording_label", "Recording Label"),
+                            ("rdate", "Release Date"),
+                            ("cddiskcount", "Number of Discs"),
+                            ("cdruntime", "Runtime"),
+                            ("category", "Categories"),
+                            ("language", "Language"),
+                            ("id", "Catalogue Number"),
+                            ("location", "Location"),
+                            ("cdaudio", "Audio"),
+                        ),
+                    ),
+                ),
+            ),
+            TabSpec(
+                key="details",
+                label="Details",
+                sections=(
+                    FieldsSection(
+                        (
+                            ("price", "Price"),
+                            ("monetary_units", "Monetary Units"),
+                            ("accession_number", "Accession Number"),
+                            ("keyword", "Keywords"),
+                        )
+                    ),
+                ),
+            ),
         ),
-        text_fields=(("description", "Description"),),
         quantity="quantity",
         borrower_type="CD",
         front_cover="front_cover",
@@ -231,25 +271,45 @@ ITEM_TYPES: tuple[ItemType, ...] = (
         identifier="id",
         identifier_label="ISSN",
         search_columns=("title", "id", "publisher", "category", "keyword"),
-        detail_fields=(
-            ("publisher", "Publisher"),
-            ("pdate", "Publication Date"),
-            ("place", "Place of Publication"),
-            ("issuevolume", "Volume"),
-            ("issueno", "Issue"),
-            ("category", "Categories"),
-            ("lccontrolnumber", "LC Control Number"),
-            ("language", "Language"),
-            ("id", "ISSN"),
-            ("price", "Price"),
-            ("monetary_units", "Monetary Units"),
-            ("location", "Location"),
-            ("callnumber", "Call Number"),
-            ("deweynumber", "Dewey Number"),
-            ("accession_number", "Accession Number"),
-            ("keyword", "Keywords"),
+        tabs=(
+            TabSpec(
+                key="main",
+                label="Main",
+                sections=(
+                    TextSection("description", "Description"),
+                    FieldsSection(
+                        (
+                            ("publisher", "Publisher"),
+                            ("pdate", "Publication Date"),
+                            ("place", "Place of Publication"),
+                            ("issuevolume", "Volume"),
+                            ("issueno", "Issue"),
+                            ("category", "Categories"),
+                            ("language", "Language"),
+                            ("id", "ISSN"),
+                            ("location", "Location"),
+                            ("callnumber", "Call Number"),
+                        )
+                    ),
+                ),
+            ),
+            TabSpec(
+                key="details",
+                label="Details",
+                sections=(
+                    FieldsSection(
+                        (
+                            ("lccontrolnumber", "LC Control Number"),
+                            ("price", "Price"),
+                            ("monetary_units", "Monetary Units"),
+                            ("deweynumber", "Dewey Number"),
+                            ("accession_number", "Accession Number"),
+                            ("keyword", "Keywords"),
+                        )
+                    ),
+                ),
+            ),
         ),
-        text_fields=(("description", "Description"),),
         quantity="quantity",
         borrower_type="Journal",
         front_cover="front_cover",
@@ -265,25 +325,45 @@ ITEM_TYPES: tuple[ItemType, ...] = (
         identifier="id",
         identifier_label="ISSN",
         search_columns=("title", "id", "publisher", "category", "keyword"),
-        detail_fields=(
-            ("publisher", "Publisher"),
-            ("pdate", "Publication Date"),
-            ("place", "Place of Publication"),
-            ("issuevolume", "Volume"),
-            ("issueno", "Issue"),
-            ("category", "Categories"),
-            ("language", "Language"),
-            ("id", "ISSN"),
-            ("price", "Price"),
-            ("monetary_units", "Monetary Units"),
-            ("location", "Location"),
-            ("lccontrolnumber", "LC Control Number"),
-            ("callnumber", "Call Number"),
-            ("deweynumber", "Dewey Number"),
-            ("accession_number", "Accession Number"),
-            ("keyword", "Keywords"),
+        tabs=(
+            TabSpec(
+                key="main",
+                label="Main",
+                sections=(
+                    TextSection("description", "Description"),
+                    FieldsSection(
+                        (
+                            ("publisher", "Publisher"),
+                            ("pdate", "Publication Date"),
+                            ("place", "Place of Publication"),
+                            ("issuevolume", "Volume"),
+                            ("issueno", "Issue"),
+                            ("category", "Categories"),
+                            ("language", "Language"),
+                            ("id", "ISSN"),
+                            ("location", "Location"),
+                            ("callnumber", "Call Number"),
+                        )
+                    ),
+                ),
+            ),
+            TabSpec(
+                key="details",
+                label="Details",
+                sections=(
+                    FieldsSection(
+                        (
+                            ("price", "Price"),
+                            ("monetary_units", "Monetary Units"),
+                            ("lccontrolnumber", "LC Control Number"),
+                            ("deweynumber", "Dewey Number"),
+                            ("accession_number", "Accession Number"),
+                            ("keyword", "Keywords"),
+                        )
+                    ),
+                ),
+            ),
         ),
-        text_fields=(("description", "Description"),),
         quantity="quantity",
         borrower_type="Magazine",
         front_cover="front_cover",
@@ -299,23 +379,43 @@ ITEM_TYPES: tuple[ItemType, ...] = (
         identifier="id",
         identifier_label="UPC",
         search_columns=("title", "id", "publisher", "genre", "vgplatform", "keyword"),
-        detail_fields=(
-            ("vgrating", "Game Rating"),
-            ("vgplatform", "Platform"),
-            ("vgmode", "Mode"),
-            ("publisher", "Publisher"),
-            ("rdate", "Release Date"),
-            ("place", "Place of Publication"),
-            ("genre", "Genres"),
-            ("language", "Language"),
-            ("id", "UPC"),
-            ("price", "Price"),
-            ("monetary_units", "Monetary Units"),
-            ("location", "Location"),
-            ("accession_number", "Accession Number"),
-            ("keyword", "Keywords"),
+        tabs=(
+            TabSpec(
+                key="main",
+                label="Main",
+                sections=(
+                    TextSection("description", "Description"),
+                    FieldsSection(
+                        (
+                            ("vgrating", "Game Rating"),
+                            ("vgplatform", "Platform"),
+                            ("vgmode", "Mode"),
+                            ("publisher", "Publisher"),
+                            ("rdate", "Release Date"),
+                            ("place", "Place of Publication"),
+                            ("genre", "Genres"),
+                            ("language", "Language"),
+                            ("location", "Location"),
+                        )
+                    ),
+                ),
+            ),
+            TabSpec(
+                key="details",
+                label="Details",
+                sections=(
+                    FieldsSection(
+                        (
+                            ("id", "UPC"),
+                            ("price", "Price"),
+                            ("monetary_units", "Monetary Units"),
+                            ("accession_number", "Accession Number"),
+                            ("keyword", "Keywords"),
+                        )
+                    ),
+                ),
+            ),
         ),
-        text_fields=(("description", "Description"),),
         quantity="quantity",
         borrower_type="Video Game",
         front_cover="front_cover",
@@ -331,20 +431,45 @@ ITEM_TYPES: tuple[ItemType, ...] = (
         identifier="document_id",
         identifier_label="Document ID",
         search_columns=("document_title", "author", "document_id", "client", "job_number", "notes"),
-        detail_fields=(
-            ("author", "Authors"),
-            ("client", "Clients"),
-            ("document_code_a", "Document code A"),
-            ("document_code_b", "Document code B"),
-            ("document_date", "Document Date"),
-            ("document_id", "Document ID"),
-            ("document_status", "Document Status"),
-            ("document_type", "Document Type"),
-            ("job_number", "Job Number"),
-            ("location", "Location"),
-            # File count (computed field)
+        detail_fields=(),
+        tabs=(
+            TabSpec(
+                key="main",
+                label="Main",
+                sections=(
+                    FieldsSection(
+                        (
+                            ("author", "Authors"),
+                            ("client", "Clients"),
+                            ("document_date", "Document Date"),
+                            ("document_id", "Document ID"),
+                            ("document_type", "Document Type"),
+                            ("job_number", "Job Number"),
+                            ("location", "Location"),
+                            # File count (computed field)
+                        )
+                    ),
+                ),
+            ),
+            TabSpec(
+                key="details",
+                label="Details",
+                sections=(
+                    FieldsSection(
+                        (
+                            ("document_code_a", "Document code A"),
+                            ("document_code_b", "Document code B"),
+                            ("document_status", "Document Status"),
+                        )
+                    ),
+                ),
+            ),
+            TabSpec(
+                key="notes",
+                label="Notes",
+                sections=(TextSection("notes", None),),
+            ),
         ),
-        text_fields=(("notes", "Notes"),),
         front_cover="front_cover",
     ),
     ItemType(
@@ -356,13 +481,34 @@ ITEM_TYPES: tuple[ItemType, ...] = (
         identifier="id",
         identifier_label="ID",
         search_columns=("title", "id", "accession_number", "about", "notes"),
-        detail_fields=(
-            ("id", "ID"),
-            ("location", "Location"),
-            # Photograph count (computed field)
-            ("accession_number", "Accession Number"),
-        ),
+        detail_fields=(),
         text_fields=(("about", "About"), ("notes", "Notes")),
+        tabs=(
+            TabSpec(
+                key="main",
+                label="Main",
+                sections=(
+                    TextSection("about", "About"),
+                    FieldsSection(
+                        (
+                            ("id", "ID"),
+                            ("location", "Location"),
+                            # Photograph count (computed field)
+                        )
+                    ),
+                ),
+            ),
+            TabSpec(
+                key="details",
+                label="Details",
+                sections=(FieldsSection((("accession_number", "Accession Number"),)),),
+            ),
+            TabSpec(
+                key="notes",
+                label="Notes",
+                sections=(TextSection("notes", None),),
+            ),
+        ),
         front_cover="image_scaled",
     ),
 )
