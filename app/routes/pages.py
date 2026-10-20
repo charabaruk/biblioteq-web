@@ -101,3 +101,34 @@ def item_detail(
     return templates.TemplateResponse(
         request, "item.html", {"types": catalog.types.values(), "item": item, "spec": spec}
     )
+
+
+@router.get("/item/{type_key}/{item_id}/{tab_key}", response_class=HTMLResponse)
+def item_tab(
+    request: Request,
+    type_key: str,
+    item_id: ItemId,
+    tab_key: str,
+    conn: Connection = Depends(get_conn),
+    catalog: Catalog = Depends(get_catalog),
+):
+    """One tab: a fragment for the tab script, the whole item page for everyone else."""
+    spec = require_type(type_key, catalog)
+    if not any(t.key == tab_key for t in spec.tabs):
+        raise HTTPException(status_code=404, detail="Unknown tab")
+    if request.headers.get("x-requested-with") == "fetch":
+        tab = repository.get_tab(conn, spec, item_id, tab_key)
+        if tab is None:
+            raise HTTPException(status_code=404, detail="Item not found")
+        response = templates.TemplateResponse(
+            request, "item/fragment.html", {"spec": spec, "tab": tab}
+        )
+    else:
+        item = repository.get_item(conn, catalog, spec, item_id, load=tab_key)
+        if item is None:
+            raise HTTPException(status_code=404, detail="Item not found")
+        response = templates.TemplateResponse(
+            request, "item.html", {"types": catalog.types.values(), "item": item, "spec": spec}
+        )
+    response.headers["Vary"] = "X-Requested-With"
+    return response

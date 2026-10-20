@@ -278,7 +278,14 @@ def _load_sections(conn: Connection, spec: ItemType, tab: TabSpec, item_id: int)
     return sections
 
 
-def get_item(conn: Connection, catalog: Catalog, spec: ItemType, item_id: int) -> Item | None:
+def get_item(
+    conn: Connection,
+    catalog: Catalog,
+    spec: ItemType,
+    item_id: int,
+    load: str | None = None,
+) -> Item | None:
+    """Load an item; lazy tabs stay unloaded unless named by `load`."""
     qty = quote(spec.quantity) if spec.quantity else "NULL"
     cols = [
         f"{_text(spec.title)} AS title",
@@ -306,12 +313,28 @@ def get_item(conn: Connection, catalog: Catalog, spec: ItemType, item_id: int) -
         has_back=bool(row["has_back"]),
     )
     for tab in spec.tabs:
-        sections = _load_sections(conn, spec, tab, item_id)
+        loaded = not tab.lazy or tab.key == load
+        sections = _load_sections(conn, spec, tab, item_id) if loaded else None
         item.tabs.append(Tab(tab.key, tab.label, tab.template, sections))
     if spec.quantity and row["quantity"] is not None:
         item.availability = _availability(conn, catalog, spec, item_id, int(row["quantity"]))
     conn.rollback()
     return item
+
+
+def get_tab(conn: Connection, spec: ItemType, item_id: int, tab_key: str) -> Tab | None:
+    """One tab's content; None if the tab or the item does not exist."""
+    tab = next((t for t in spec.tabs if t.key == tab_key), None)
+    if tab is None:
+        return None
+    exists = conn.execute(
+        text(f"SELECT 1 FROM {quote(spec.table)} WHERE {quote(spec.pk)} = :id"), {"id": item_id}
+    ).first()
+    result = None
+    if exists:
+        result = Tab(tab.key, tab.label, tab.template, _load_sections(conn, spec, tab, item_id))
+    conn.rollback()
+    return result
 
 
 def _availability(

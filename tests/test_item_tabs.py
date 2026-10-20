@@ -1,5 +1,13 @@
 """Item detail sections and tabs (ADR-0006, ADR-0007)."""
 
+import pytest
+
+FETCH = {"X-Requested-With": "fetch"}
+
+
+def _flat(html: str) -> str:
+    return " ".join(html.split())
+
 
 def test_description_is_a_text_section_above_the_fields(client):
     html = client.get("/item/book/1").text
@@ -20,31 +28,65 @@ def test_empty_text_section_is_omitted(client):
     assert 'class="prose"' not in html
 
 
-def test_single_tab_shows_no_tab_heading(client):
-    assert "tab-title" not in client.get("/item/book/1").text
+def test_single_tab_shows_no_tab_list(client):
+    html = client.get("/item/book/1").text
+    assert "tab-title" not in html
+    assert "data-tabs" not in html
+    assert "tabs.js" not in html
 
 
-def test_every_tab_is_rendered_with_a_heading(tabbed_client):
-    html = tabbed_client.get("/item/book/1").text
-    assert '<h2 class="tab-title">Main</h2>' in html
-    assert '<h2 class="tab-title">Notes</h2>' in html
-    assert "Douglas Adams" in html
+def test_full_page_renders_main_and_placeholders_for_lazy_tabs(tabbed_client):
+    r = tabbed_client.get("/item/book/1")
+    assert r.status_code == 200
+    assert "Douglas Adams" in r.text
+    assert '<h2 class="tab-title">Notes</h2>' in r.text
+    assert 'href="#tab-notes"' in r.text
+    assert 'data-src="/item/book/1/notes"' in r.text
+    assert "Show Notes" in r.text
+    assert "Group 1" not in r.text
+    assert "tabs.js" in r.text
+    assert "vary" not in r.headers
 
 
-def test_table_section_groups_and_orders_rows(tabbed_client):
-    html = tabbed_client.get("/item/book/1").text
-    assert html.index("Group 1") < html.index("One") < html.index("Two")
-    assert html.index("Two") < html.index("Group 2") < html.index("Three")
-    assert '<th scope="col">Note</th>' in html
+def test_fragment_has_only_the_tab_body_in_order(tabbed_client):
+    r = tabbed_client.get("/item/book/1/notes", headers=FETCH)
+    assert r.status_code == 200
+    assert "<html" not in r.text
+    assert r.headers["vary"] == "X-Requested-With"
+    assert r.text.index("Group 1") < r.text.index("One") < r.text.index("Two")
+    assert r.text.index("Two") < r.text.index("Group 2") < r.text.index("Three")
+    assert '<th scope="col">Note</th>' in r.text
 
 
 def test_table_section_applies_row_limit(tabbed_client):
-    html = tabbed_client.get("/item/book/1").text
+    html = tabbed_client.get("/item/book/1/notes", headers=FETCH).text
     assert "Three" in html
     assert "Four" not in html
 
 
-def test_item_without_rows_omits_table_section(tabbed_client):
-    html = tabbed_client.get("/item/book/2").text
-    assert "<table" not in html
-    assert "Group" not in html
+def test_tab_route_without_header_is_a_full_page(tabbed_client):
+    r = tabbed_client.get("/item/book/1/notes")
+    assert r.status_code == 200
+    assert "<html" in r.text
+    assert "Group 1" in r.text
+    assert "Show Notes" not in r.text
+    assert r.headers["vary"] == "X-Requested-With"
+
+
+def test_fragment_matches_tab_markup_in_full_page(tabbed_client):
+    fragment = tabbed_client.get("/item/book/1/notes", headers=FETCH).text
+    full = tabbed_client.get("/item/book/1/notes").text
+    assert _flat(fragment) in _flat(full)
+
+
+def test_item_without_rows_has_empty_table_tab(tabbed_client):
+    r = tabbed_client.get("/item/book/2/notes", headers=FETCH)
+    assert r.status_code == 200
+    assert "<table" not in r.text
+
+
+@pytest.mark.parametrize("headers", [{}, FETCH])
+def test_unknown_tab_and_item_are_404(tabbed_client, headers):
+    assert tabbed_client.get("/item/book/1/nope", headers=headers).status_code == 404
+    assert tabbed_client.get("/item/book/9999/notes", headers=headers).status_code == 404
+    assert tabbed_client.get("/item/nope/1/notes", headers=headers).status_code == 404
