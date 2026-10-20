@@ -6,7 +6,7 @@ This checklist follows the version goals in the [roadmap](roadmap.md). Items lis
 
 - [ ] **Photograph collection thumbnails:** Use the first photograph in a collection as its browse thumbnail. Choose a deterministic ordering for identifying the first photograph.
 - [ ] **Attached-file listings:** List files attached to supported item types. Do not retrieve or serve file contents; file access is deferred.
-- [ ] **Music CD track listings:** Show tracks ordered by disc and track number.
+- [x] **Music CD track listings:** Show tracks ordered by disc and track number.
 - [ ] **Square Music CD browse images:** Use square images for Music CDs on browse pages while retaining the current aspect ratio for other item types.
 
 ## v0.3: Related Catalog Records

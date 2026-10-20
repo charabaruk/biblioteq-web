@@ -224,6 +224,20 @@ ITEM_TYPES: tuple[ItemType, ...] = (
                 label="Main",
                 sections=(
                     TextSection("description", "Description"),
+                    TableSection(
+                        label="Track Listing",
+                        table="cd_songs",
+                        fk="item_oid",
+                        columns=(
+                            ("songnum", "#"),
+                            ("songtitle", "Title"),
+                            ("runtime", "Length"),
+                            ("composer", "Composer"),
+                        ),
+                        order_by=("albumnum", "songnum"),
+                        group_by="albumnum",
+                        group_label="Disc",
+                    ),
                     FieldsSection(
                         (
                             ("artist", "Artist"),
