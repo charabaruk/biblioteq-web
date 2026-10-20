@@ -115,6 +115,7 @@ ITEM_TYPES: tuple[ItemType, ...] = (
                             ("edition", "Edition"),
                             ("category", "Categories"),
                             ("language", "Language"),
+                            ("target_audience", "Target Audience"),
                             ("id", "ISBN-10"),
                             ("isbn13", "ISBN-13"),
                             ("binding_type", "Book Binding Type"),
@@ -132,7 +133,6 @@ ITEM_TYPES: tuple[ItemType, ...] = (
                         (
                             ("lccontrolnumber", "LC Control Number"),
                             ("deweynumber", "Dewey Class Number"),
-                            ("target_audience", "Target Audience"),
                             ("originality", "Originality"),
                             ("condition", "Condition"),
                             ("accession_number", "Accession Number"),
