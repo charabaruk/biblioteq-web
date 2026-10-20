@@ -1,6 +1,17 @@
+from dataclasses import replace
+
 import pytest
 
-from app.item_types import ITEM_TYPES, quote, resolve
+from app.item_types import (
+    ITEM_TYPES,
+    FieldsSection,
+    TableSection,
+    TabSpec,
+    TextSection,
+    quote,
+    related_tables,
+    resolve,
+)
 
 
 def test_quote_accepts_plain_names():
@@ -60,3 +71,79 @@ def test_photograph_collection_uses_collection_columns():
         ("about", "About"),
         ("notes", "Notes"),
     )
+
+
+def test_default_main_tab_puts_text_before_fields():
+    book = replace(
+        next(t for t in ITEM_TYPES if t.key == "book"),
+        detail_fields=(("author", "Authors"),),
+        text_fields=(("description", "Description"),),
+    )
+    resolved = resolve(book, {"myoid", "title", "author", "description"})
+    assert resolved is not None
+    (main,) = resolved.tabs
+    assert main.key == "main"
+    assert main.sections == (
+        TextSection("description", "Description"),
+        FieldsSection((("author", "Authors"),)),
+    )
+
+
+def test_resolve_drops_missing_text_fields():
+    book = replace(
+        next(t for t in ITEM_TYPES if t.key == "book"),
+        detail_fields=(("author", "Authors"),),
+        text_fields=(("description", "Description"),),
+    )
+    resolved = resolve(book, {"myoid", "title", "author"})
+    assert resolved is not None
+    assert resolved.text_fields == ()
+    (main,) = resolved.tabs
+    assert main.sections == (FieldsSection((("author", "Authors"),)),)
+
+
+NOTES = TableSection(
+    label="Notes",
+    table="note",
+    fk="item_oid",
+    columns=(("seq", "No."), ("note", "Note")),
+    order_by=("grp", "seq"),
+    group_by="grp",
+)
+
+
+def _with_notes(lazy=False):
+    book = next(t for t in ITEM_TYPES if t.key == "book")
+    return replace(book, tabs=(TabSpec("notes", "Notes", (NOTES,), lazy=lazy),))
+
+
+def test_resolve_keeps_available_table_section():
+    tables = {"note": {"item_oid", "seq", "note", "grp"}}
+    resolved = resolve(_with_notes(), {"myoid", "title"}, tables)
+    assert resolved is not None
+    assert resolved.tabs[0].sections == (NOTES,)
+
+
+def test_resolve_trims_table_section_columns():
+    tables = {"note": {"item_oid", "seq", "note"}}
+    resolved = resolve(_with_notes(), {"myoid", "title"}, tables)
+    assert resolved is not None
+    (section,) = resolved.tabs[0].sections
+    assert section.order_by == ("seq",)
+    assert section.group_by is None
+
+
+@pytest.mark.parametrize(
+    "tables",
+    [None, {}, {"note": {"seq", "note"}}, {"note": {"item_oid", "other"}}],
+    ids=["no tables", "table missing", "fk missing", "no shown columns"],
+)
+def test_resolve_drops_unusable_table_section_and_empty_tab(tables):
+    resolved = resolve(_with_notes(), {"myoid", "title"}, tables)
+    assert resolved is not None
+    assert resolved.tabs == ()
+
+
+def test_related_tables_lists_section_tables():
+    assert list(related_tables(_with_notes())) == ["note"]
+    assert list(related_tables(next(t for t in ITEM_TYPES if t.key == "book"))) == []

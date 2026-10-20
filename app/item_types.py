@@ -10,9 +10,51 @@ BiblioteQ versions degrade gracefully.
 """
 
 import re
+from collections.abc import Iterator
 from dataclasses import dataclass, replace
 
 _IDENTIFIER = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
+
+
+@dataclass(frozen=True)
+class FieldsSection:
+    """Short label/value pairs from the item's own table, rendered as a definition list."""
+
+    fields: tuple[tuple[str, str], ...]  # (column, label)
+
+
+@dataclass(frozen=True)
+class TextSection:
+    """One prose column from the item's own table."""
+
+    column: str
+    label: str
+
+
+@dataclass(frozen=True)
+class TableSection:
+    """Rows of a related table whose `fk` column holds the item's primary key."""
+
+    label: str
+    table: str
+    fk: str
+    columns: tuple[tuple[str, str], ...]  # (column, header)
+    order_by: tuple[str, ...] = ()  # must start with group_by when grouping
+    group_by: str | None = None
+    group_label: str = ""  # prefix for group headings, e.g. "Disc"
+    limit: int = 500
+
+
+SectionSpec = FieldsSection | TextSection | TableSection
+
+
+@dataclass(frozen=True)
+class TabSpec:
+    key: str  # used in URLs and fragments
+    label: str
+    sections: tuple[SectionSpec, ...]
+    lazy: bool = False  # content is fetched on demand, not rendered with the item page
+    template: str | None = None  # optional template overriding the default tab body
 
 
 @dataclass(frozen=True)
@@ -27,6 +69,8 @@ class ItemType:
     identifier_label: str | None = None  # display label for primary identifier
     search_columns: tuple[str, ...] = ()
     detail_fields: tuple[tuple[str, str], ...] = ()  # (column, label)
+    text_fields: tuple[tuple[str, str], ...] = ()  # prose columns, shown above detail_fields
+    tabs: tuple[TabSpec, ...] = ()  # empty: a Main tab is built from the fields above
     quantity: str | None = None
     borrower_type: str | None = None  # value of item_borrower.type for this table
     front_cover: str | None = None
@@ -312,13 +356,64 @@ def quote(name: str) -> str:
     return f'"{name}"'
 
 
-def resolve(spec: ItemType, columns: set[str]) -> ItemType | None:
-    """Drop columns missing from the database; None if the type is unusable."""
+def related_tables(spec: ItemType) -> Iterator[str]:
+    """Names of tables, other than the item's own, that its tab sections read."""
+    for tab in spec.tabs:
+        for section in tab.sections:
+            if isinstance(section, TableSection):
+                yield section.table
+
+
+def _resolve_section(
+    section: SectionSpec, columns: set[str], tables: dict[str, set[str]]
+) -> SectionSpec | None:
+    if isinstance(section, FieldsSection):
+        fields = tuple(f for f in section.fields if f[0] in columns)
+        return replace(section, fields=fields) if fields else None
+    if isinstance(section, TextSection):
+        return section if section.column in columns else None
+    available = tables.get(section.table, set())
+    shown = tuple(c for c in section.columns if c[0] in available)
+    if section.fk not in available or not shown:
+        return None
+    return replace(
+        section,
+        columns=shown,
+        order_by=tuple(c for c in section.order_by if c in available),
+        group_by=section.group_by if section.group_by in available else None,
+    )
+
+
+def resolve(
+    spec: ItemType, columns: set[str], tables: dict[str, set[str]] | None = None
+) -> ItemType | None:
+    """Drop columns, sections and tabs the database cannot serve; None if the type is unusable.
+
+    `tables` maps table name to column names, for sections that read related tables.
+    """
     if spec.pk not in columns or spec.title not in columns:
         return None
 
     def keep(col: str | None) -> str | None:
         return col if col in columns else None
+
+    declared = spec.tabs or (
+        TabSpec(
+            key="main",
+            label="Main",
+            sections=(
+                *(TextSection(c, label) for c, label in spec.text_fields),
+                FieldsSection(spec.detail_fields),
+            ),
+        ),
+    )
+    tabs = []
+    for tab in declared:
+        sections = tuple(
+            s for s in (_resolve_section(s, columns, tables or {}) for s in tab.sections) if s
+        )
+        if sections:
+            tabs.append(replace(tab, sections=sections))
 
     return replace(
         spec,
@@ -326,6 +421,8 @@ def resolve(spec: ItemType, columns: set[str]) -> ItemType | None:
         identifier=keep(spec.identifier),
         search_columns=tuple(c for c in spec.search_columns if c in columns),
         detail_fields=tuple(f for f in spec.detail_fields if f[0] in columns),
+        text_fields=tuple(f for f in spec.text_fields if f[0] in columns),
+        tabs=tuple(tabs),
         quantity=keep(spec.quantity),
         front_cover=keep(spec.front_cover),
         back_cover=keep(spec.back_cover),
