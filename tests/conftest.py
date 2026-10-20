@@ -52,3 +52,47 @@ def client(configured):
 
     with TestClient(app) as c:
         yield c
+
+
+@pytest.fixture
+def tabbed_client(configured, monkeypatch):
+    """Client whose book type has a second tab backed by the test-only book_note table."""
+    from dataclasses import replace
+
+    from fastapi.testclient import TestClient
+
+    from app import repository
+    from app.item_types import (
+        ITEM_TYPES,
+        FieldsSection,
+        TableSection,
+        TabSpec,
+        TextSection,
+    )
+    from app.main import app
+
+    book = next(t for t in ITEM_TYPES if t.key == "book")
+    notes = TableSection(
+        label="Notes",
+        table="book_note",
+        fk="item_oid",
+        columns=(("seq", "No."), ("note", "Note")),
+        order_by=("grp", "seq"),
+        group_by="grp",
+        group_label="Group",
+        limit=3,
+    )
+    tabbed = replace(
+        book,
+        tabs=(
+            TabSpec(
+                "main",
+                "Main",
+                (TextSection("description", "Description"), FieldsSection((("author", "Author"),))),
+            ),
+            TabSpec("notes", "Notes", (notes,)),
+        ),
+    )
+    monkeypatch.setattr(repository, "ITEM_TYPES", (tabbed,))
+    with TestClient(app) as c:
+        yield c

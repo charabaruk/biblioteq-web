@@ -10,6 +10,11 @@ CREATE TABLE item_borrower (
   myoid INTEGER PRIMARY KEY AUTOINCREMENT, item_oid INTEGER NOT NULL, type TEXT NOT NULL,
   memberid TEXT, copyid TEXT, reserved_date TEXT, duedate TEXT
 );
+-- Test-only related table that exercises table sections.
+CREATE TABLE book_note (
+  myoid INTEGER PRIMARY KEY AUTOINCREMENT, item_oid INTEGER NOT NULL,
+  grp INTEGER NOT NULL, seq INTEGER NOT NULL, note TEXT NOT NULL
+);
 
 -- Cover is a 1x1 transparent PNG.
 INSERT INTO book (id, isbn13, title, author, publisher, pdate, quantity, marc_tags, front_cover)
@@ -24,3 +29,7 @@ INSERT INTO item_borrower (item_oid, type, memberid) VALUES (1, 'Book', 'M1'), (
 
 UPDATE book SET description = 'A comic <i>space</i> opera.' || char(10) || 'Second line.'
 WHERE isbn13 = '9780345391803';
+
+-- Inserted out of order on purpose.
+INSERT INTO book_note (item_oid, grp, seq, note) VALUES
+ (1, 2, 2, 'Four'), (1, 1, 2, 'Two'), (1, 2, 1, 'Three'), (1, 1, 1, 'One');
