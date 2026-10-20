@@ -35,6 +35,8 @@ flowchart LR
 - Browse is search with no terms and a single type. Pages use `LIMIT`/`OFFSET` ordered by title.
 - Availability is `quantity` minus `COUNT(*)` of `item_borrower` rows for the item.
 - Covers are read from BYTEA columns, MIME type sniffed, and served with an `ETag`.
+- An item page is tabs of sections (ADR-0006). The item query loads the title, covers and quantity; each
+  non-lazy tab then loads its own sections, and lazy tabs load through `/item/{type}/{id}/{tab}` (ADR-0007).
 
 ## Known limits
 
