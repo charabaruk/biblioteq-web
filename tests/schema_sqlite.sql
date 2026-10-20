@@ -21,3 +21,6 @@ VALUES
  ('0000000001', '9780000000019', '100% Wild_Cards', 'Test Author', 'Test Press', '2000', 1, NULL, NULL);
 
 INSERT INTO item_borrower (item_oid, type, memberid) VALUES (1, 'Book', 'M1'), (2, 'Book', 'M2');
+
+UPDATE book SET description = 'A comic <i>space</i> opera.' || char(10) || 'Second line.'
+WHERE isbn13 = '9780345391803';

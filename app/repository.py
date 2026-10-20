@@ -6,7 +6,15 @@ from dataclasses import dataclass, field
 
 from sqlalchemy import Connection, text
 
-from app.item_types import ITEM_TYPES, ItemType, quote, resolve
+from app.item_types import (
+    ITEM_TYPES,
+    FieldsSection,
+    ItemType,
+    TabSpec,
+    TextSection,
+    quote,
+    resolve,
+)
 
 log = logging.getLogger(__name__)
 
@@ -45,11 +53,27 @@ class Availability:
 
 
 @dataclass
+class Section:
+    kind: str  # "fields" or "text"; selects the sections/ partial
+    label: str
+    fields: list[tuple[str, str]] = field(default_factory=list)
+    text: str = ""
+
+
+@dataclass
+class Tab:
+    key: str
+    label: str
+    template: str | None
+    sections: list[Section]
+
+
+@dataclass
 class Item:
     spec: ItemType
     id: int
     title: str
-    fields: list[tuple[str, str]] = field(default_factory=list)
+    tabs: list[Tab] = field(default_factory=list)
     has_front: bool = False
     has_back: bool = False
     availability: Availability | None = None
@@ -177,11 +201,52 @@ def recent(conn: Connection, spec: ItemType, limit: int) -> list[dict]:
     return items
 
 
+def _clean(value: str | None) -> str:
+    return value.strip() if value else ""
+
+
+def _own_values(conn: Connection, spec: ItemType, tab: TabSpec, item_id: int) -> dict[str, str]:
+    """Values of every column the tab's own-table sections read, in one query."""
+    names: list[str] = []
+    for section in tab.sections:
+        if isinstance(section, FieldsSection):
+            names += [c for c, _ in section.fields]
+        elif isinstance(section, TextSection):
+            names.append(section.column)
+    names = list(dict.fromkeys(names))
+    if not names:
+        return {}
+    cols = ", ".join(f"{_text(c)} AS c{i}" for i, c in enumerate(names))
+    row = (
+        conn.execute(
+            text(f"SELECT {cols} FROM {quote(spec.table)} WHERE {quote(spec.pk)} = :id"),
+            {"id": item_id},
+        )
+        .mappings()
+        .first()
+    )
+    if row is None:
+        return {}
+    return {c: _clean(row[f"c{i}"]) for i, c in enumerate(names)}
+
+
+def _load_sections(conn: Connection, spec: ItemType, tab: TabSpec, item_id: int) -> list[Section]:
+    values = _own_values(conn, spec, tab, item_id)
+    sections: list[Section] = []
+    for s in tab.sections:
+        if isinstance(s, FieldsSection):
+            pairs = [(label, values[c]) for c, label in s.fields if values.get(c)]
+            if pairs:
+                sections.append(Section("fields", "", fields=pairs))
+        elif isinstance(s, TextSection) and values.get(s.column):
+            sections.append(Section("text", s.label, text=values[s.column]))
+    return sections
+
+
 def get_item(conn: Connection, catalog: Catalog, spec: ItemType, item_id: int) -> Item | None:
-    cols = [f"{_text(spec.title)} AS title"]
-    cols += [f"{_text(c)} AS f{i}" for i, (c, _) in enumerate(spec.detail_fields)]
     qty = quote(spec.quantity) if spec.quantity else "NULL"
-    cols += [
+    cols = [
+        f"{_text(spec.title)} AS title",
         f"{_flag(spec.front_cover)} AS has_front",
         f"{_flag(spec.back_cover)} AS has_back",
         f"{qty} AS quantity",
@@ -202,14 +267,12 @@ def get_item(conn: Connection, catalog: Catalog, spec: ItemType, item_id: int) -
         spec=spec,
         id=item_id,
         title=row["title"] or "(untitled)",
-        fields=[
-            (label, row[f"f{i}"].strip())
-            for i, (_, label) in enumerate(spec.detail_fields)
-            if row[f"f{i}"] and row[f"f{i}"].strip()
-        ],
         has_front=bool(row["has_front"]),
         has_back=bool(row["has_back"]),
     )
+    for tab in spec.tabs:
+        sections = _load_sections(conn, spec, tab, item_id)
+        item.tabs.append(Tab(tab.key, tab.label, tab.template, sections))
     if spec.quantity and row["quantity"] is not None:
         item.availability = _availability(conn, catalog, spec, item_id, int(row["quantity"]))
     conn.rollback()

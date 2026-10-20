@@ -67,6 +67,9 @@ dl { display: grid; grid-template-columns: max-content 1fr; gap: 0.4rem 1.25rem;
 dt { color: var(--muted); }
 dd { margin: 0; white-space: pre-wrap; }
 
+.prose h3 { margin: 1rem 0 0.25rem; }
+.prose p { margin: 0 0 1rem; white-space: pre-wrap; }
+
 @media (max-width: 640px) {
   .detail { grid-template-columns: 1fr; }
 }

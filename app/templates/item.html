@@ -18,9 +18,13 @@
       {% else %}All {{ a.total }} cop{{ 'y is' if a.total == 1 else 'ies are' }} checked out{% endif %}
     </p>
     {% endif %}
-    <dl>
-      {% for label, value in item.fields %}<dt>{{ label }}</dt><dd>{{ value }}</dd>{% endfor %}
-    </dl>
+    {% set multi = item.tabs|length > 1 %}
+    {% for tab in item.tabs %}
+    <section id="tab-{{ tab.key }}" class="tab-panel">
+      {% if multi %}<h2 class="tab-title">{{ tab.label }}</h2>{% endif %}
+      <div class="tab-body">{% include "item/_body.html" %}</div>
+    </section>
+    {% endfor %}
   </div>
 </article>
 {% endblock %}

@@ -99,5 +99,5 @@ def item_detail(
     if item is None:
         raise HTTPException(status_code=404, detail="Item not found")
     return templates.TemplateResponse(
-        request, "item.html", {"types": catalog.types.values(), "item": item}
+        request, "item.html", {"types": catalog.types.values(), "item": item, "spec": spec}
     )

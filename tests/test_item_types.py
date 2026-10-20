@@ -24,10 +24,16 @@ def test_quote_rejects_unsafe_names(bad):
         quote(bad)
 
 
+def test_registry_keeps_prose_out_of_detail_fields():
+    for spec in ITEM_TYPES:
+        assert not {c for c, _ in spec.detail_fields} & {c for c, _ in spec.text_fields}
+
+
 def test_registry_never_references_marc_tags():
     for spec in ITEM_TYPES:
         cols = {spec.title, spec.creator, spec.identifier, spec.quantity, spec.front_cover}
         cols |= set(spec.search_columns) | {c for c, _ in spec.detail_fields}
+        cols |= {c for c, _ in spec.text_fields}
         assert "marc_tags" not in cols
 
 
@@ -68,9 +74,8 @@ def test_photograph_collection_uses_collection_columns():
         ("id", "ID"),
         ("accession_number", "Accession Number"),
         ("location", "Location"),
-        ("about", "About"),
-        ("notes", "Notes"),
     )
+    assert resolved.text_fields == (("about", "About"), ("notes", "Notes"))
 
 
 def test_default_main_tab_puts_text_before_fields():
