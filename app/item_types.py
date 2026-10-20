@@ -294,7 +294,6 @@ ITEM_TYPES: tuple[ItemType, ...] = (
         search_columns=("title", "id", "accession_number", "about", "notes"),
         detail_fields=(
             ("id", "ID"),
-            ("accession_number", "Accession Number"),
             ("location", "Location"),
             # Photograph count (computed field)
             ("about", "About"),
