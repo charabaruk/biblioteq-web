@@ -49,6 +49,7 @@ h2 .more { font-size: 0.85rem; font-weight: normal; margin-left: 0.5rem; }
 .card { display: block; background: var(--card); border: 1px solid var(--border); border-radius: 6px; overflow: hidden; color: inherit; }
 .card:hover { border-color: var(--accent); text-decoration: none; }
 .card img, .no-cover { width: 100%; aspect-ratio: 2 / 3; object-fit: cover; display: block; }
+.card[data-type="cd"] img, .card[data-type="cd"] .no-cover { aspect-ratio: 1 / 1; }
 .no-cover { display: flex; align-items: center; justify-content: center; background: #e8e6df; color: var(--muted); text-align: center; padding: 0.5rem; }
 .card-body { padding: 0.5rem 0.6rem; }
 .card-title { font-weight: 600; }

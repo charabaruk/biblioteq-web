@@ -1,5 +1,5 @@
 {% macro card(it, type_label=None) %}
-<a class="card" href="{{ base }}/item/{{ it.type }}/{{ it.id }}">
+<a class="card" href="{{ base }}/item/{{ it.type }}/{{ it.id }}" data-type="{{ it.type }}" data-id="{{ it.id }}">
   {% if it.has_cover %}
   <img src="{{ base }}/cover/{{ it.type }}/{{ it.id }}" alt="" loading="lazy">
   {% else %}
