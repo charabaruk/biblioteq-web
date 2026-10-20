@@ -6,7 +6,6 @@ This roadmap is directional and has no date commitments. It groups candidate wor
 
 The initial v0.2 scope is:
 
-- Use the first photograph in each photograph collection as its browse thumbnail, with a deterministic rule for selecting that photograph.
 - List attached files for supported item types without retrieving or serving file contents.
 - Show Music CD tracks ordered by disc and track number.
 - Use square images for Music CDs on browse pages; retain the existing aspect ratio for other item types.
