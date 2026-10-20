@@ -27,7 +27,8 @@ VALUES
 
 INSERT INTO item_borrower (item_oid, type, memberid) VALUES (1, 'Book', 'M1'), (2, 'Book', 'M2');
 
-UPDATE book SET description = 'A comic <i>space</i> opera.' || char(10) || 'Second line.'
+UPDATE book SET description = 'A comic <i>space</i> opera.' || char(10) || 'Second line.',
+  keyword = 'comedy, towel'
 WHERE isbn13 = '9780345391803';
 
 -- Placeholder values that must be treated as empty; "N/A Station" is real content.

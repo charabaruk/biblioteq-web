@@ -29,12 +29,40 @@ def test_registry_keeps_prose_out_of_detail_fields():
         assert not {c for c, _ in spec.detail_fields} & {c for c, _ in spec.text_fields}
 
 
+def _section_columns(spec):
+    """Every column the type's declared tabs read, from its own table or related ones."""
+    cols = set()
+    for tab in spec.tabs:
+        for s in tab.sections:
+            if isinstance(s, FieldsSection):
+                cols |= {c for c, _ in s.fields}
+            elif isinstance(s, TextSection):
+                cols.add(s.column)
+            else:
+                cols |= {c for c, _ in s.columns} | {s.fk, *s.order_by}
+    return cols
+
+
 def test_registry_never_references_marc_tags():
     for spec in ITEM_TYPES:
         cols = {spec.title, spec.creator, spec.identifier, spec.quantity, spec.front_cover}
         cols |= set(spec.search_columns) | {c for c, _ in spec.detail_fields}
-        cols |= {c for c, _ in spec.text_fields}
+        cols |= {c for c, _ in spec.text_fields} | _section_columns(spec)
         assert "marc_tags" not in cols
+
+
+def test_book_tab_columns_are_valid_and_unique():
+    book = next(t for t in ITEM_TYPES if t.key == "book")
+    assert [t.key for t in book.tabs] == ["main", "details"]
+    columns = [
+        c
+        for tab in book.tabs
+        for s in tab.sections
+        for c in ([s.column] if isinstance(s, TextSection) else [c for c, _ in s.fields])
+    ]
+    assert len(columns) == len(set(columns))
+    for c in columns:
+        quote(c)
 
 
 def test_registry_identifiers_are_valid():
@@ -81,6 +109,7 @@ def test_photograph_collection_uses_collection_columns():
 def test_default_main_tab_puts_text_before_fields():
     book = replace(
         next(t for t in ITEM_TYPES if t.key == "book"),
+        tabs=(),
         detail_fields=(("author", "Authors"),),
         text_fields=(("description", "Description"),),
     )
@@ -97,6 +126,7 @@ def test_default_main_tab_puts_text_before_fields():
 def test_resolve_drops_missing_text_fields():
     book = replace(
         next(t for t in ITEM_TYPES if t.key == "book"),
+        tabs=(),
         detail_fields=(("author", "Authors"),),
         text_fields=(("description", "Description"),),
     )

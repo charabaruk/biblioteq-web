@@ -321,6 +321,8 @@ def get_item(
     for tab in spec.tabs:
         loaded = not tab.lazy or tab.key == load
         sections = _load_sections(conn, spec, tab, item_id) if loaded else None
+        if sections == [] and not tab.lazy:
+            continue  # nothing to show for this item
         item.tabs.append(Tab(tab.key, tab.label, tab.template, sections))
     if spec.quantity and row["quantity"] is not None:
         item.availability = _availability(conn, catalog, spec, item_id, int(row["quantity"]))

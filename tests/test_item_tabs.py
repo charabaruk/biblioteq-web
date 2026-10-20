@@ -37,10 +37,25 @@ def test_na_placeholder_is_treated_as_empty(client):
 
 
 def test_single_tab_shows_no_tab_list(client):
-    html = client.get("/item/book/1").text
+    html = client.get("/item/book/2").text
     assert "tab-title" not in html
     assert "data-tabs" not in html
     assert "tabs.js" not in html
+
+
+def test_book_fields_are_split_across_main_and_details(client):
+    html = client.get("/item/book/1").text
+    assert 'href="#tab-main"' in html
+    assert 'href="#tab-details"' in html
+    main, details = html.split('id="tab-details"')
+    assert "Douglas Adams" in main
+    assert "Keywords" not in main
+    assert "<dt>Keywords</dt><dd>comedy, towel</dd>" in details
+
+
+def test_tab_without_content_for_the_item_is_omitted(client):
+    html = client.get("/item/book/2").text
+    assert 'id="tab-details"' not in html
 
 
 def test_full_page_renders_main_and_placeholders_for_lazy_tabs(tabbed_client):
