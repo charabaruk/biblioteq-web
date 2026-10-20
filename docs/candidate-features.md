@@ -13,6 +13,7 @@ This checklist follows the version goals in the [roadmap](roadmap.md). Items lis
 
 - [ ] **Book series pages:** Group books with a non-empty series title and show their volume strings. A null or empty series title means the book is standalone; BiblioteQ does not link books into a series.
 - [ ] **Journal and magazine publication pages:** Group issues by ISSN and show all issues for the serial publication.
+- [ ] **Initial localization support:** Replace bare strings in templates with translatable strings and generate translation catalogs.
 
 ## v0.4: Photograph Galleries
 

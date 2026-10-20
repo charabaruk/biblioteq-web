@@ -17,6 +17,7 @@ Proposed focus:
 
 - Add book series pages.
 - Add publication-level detail pages for journals and magazines, grouping issues by ISSN.
+- Initial localization support.
 
 ## v0.4: Photograph Galleries
 
