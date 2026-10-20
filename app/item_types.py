@@ -298,7 +298,6 @@ ITEM_TYPES: tuple[ItemType, ...] = (
             ("location", "Location"),
             # Photograph count (computed field)
             ("about", "About"),
-            ("accession_number", "Accession Number"),
             ("notes", "Notes"),
         ),
         front_cover="image_scaled",

@@ -52,9 +52,10 @@ def test_photograph_collection_uses_collection_columns():
 
     assert resolved is not None
     assert resolved.creator is None
-    assert resolved.search_columns == ("title", "id", "accession_number", "about")
+    assert resolved.search_columns == ("title", "id", "accession_number", "about", "notes")
     assert resolved.detail_fields == (
-        ("accession_number", "Accession number"),
+        ("id", "ID"),
+        ("accession_number", "Accession Number"),
         ("location", "Location"),
         ("about", "About"),
         ("notes", "Notes"),
