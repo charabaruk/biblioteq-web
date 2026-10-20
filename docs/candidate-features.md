@@ -29,3 +29,7 @@ This checklist follows the version goals in the [roadmap](roadmap.md). Items lis
 - [x] **Favicon:** Include the BiblioteQ icon for identifying pages.
 - [ ] **Caching support:** Reduce bandwidth use by checking `ETag` headers before sending files or cover images.
 - [ ] **Item copy info:** Show information about individual item copies under each item page.
+- [ ] **Category browsing:** List item categories and browse items in them.
+- [ ] **Author browsing:** List authors / artists and browse items by them.
+- [ ] **Locations:** Pages for item locations, and browsing items at them.
+- [ ] **Call/Dewey Number search:** Find related items by call number or Dewey class.
