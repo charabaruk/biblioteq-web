@@ -209,11 +209,11 @@ def recent(conn: Connection, spec: ItemType, limit: int) -> list[dict]:
     return items
 
 
-def _clean(value: str | None) -> str:
-    return value.strip() if value else ""
+def _clean(value: object | None) -> str:
+    return str(value).strip() if value is not None else ""
 
 
-def _own_value(value: str | None) -> str:
+def _own_value(value: object | None) -> str:
     # "N/A" is a placeholder in BiblioteQ data, not content.
     cleaned = _clean(value)
     return "" if cleaned == "N/A" else cleaned
@@ -273,7 +273,14 @@ def _load_sections(conn: Connection, spec: ItemType, tab: TabSpec, item_id: int)
     sections: list[Section] = []
     for s in tab.sections:
         if isinstance(s, FieldsSection):
-            pairs = [(label, values[c]) for c, label in s.fields if values.get(c)]
+            pairs = []
+            for column, label in s.fields:
+                value = values.get(column, "")
+                if not value or (column == "display_number" and value == "-1"):
+                    continue
+                if column in {"issueno", "issuevolume"} and value == "0":
+                    continue
+                pairs.append((label, value))
             if pairs:
                 sections.append(Section("fields", "", fields=pairs))
         elif isinstance(s, TextSection):

@@ -36,6 +36,22 @@ def test_na_placeholder_is_treated_as_empty(client):
     assert "N/A Station" in html
 
 
+@pytest.mark.parametrize("item_type", ["journal", "magazine"])
+def test_periodical_number_sentinels_are_hidden(client, item_type):
+    html = client.get(f"/item/{item_type}/1").text
+    assert "Issue Number" not in html
+    assert "Volume" not in html
+    assert "Issue" not in html
+
+
+@pytest.mark.parametrize("item_type", ["journal", "magazine"])
+def test_periodical_numbers_are_displayed(client, item_type):
+    html = client.get(f"/item/{item_type}/2").text
+    assert "<dt>Issue Number</dt><dd>42</dd>" in html
+    assert "<dt>Volume</dt><dd>2025</dd>" in html
+    assert "<dt>Issue</dt><dd>3</dd>" in html
+
+
 def test_single_tab_shows_no_tab_list(client):
     html = client.get("/item/book/2").text
     assert "tab-title" not in html

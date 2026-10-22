@@ -10,6 +10,16 @@ CREATE TABLE item_borrower (
   myoid bigserial PRIMARY KEY, item_oid bigint NOT NULL, type text NOT NULL,
   memberid text, copyid text, reserved_date text, duedate text
 );
+CREATE TABLE journal (
+  myoid bigint PRIMARY KEY, title text NOT NULL,
+  display_number integer, issueno integer NOT NULL DEFAULT 0,
+  issuevolume integer NOT NULL DEFAULT 0
+);
+CREATE TABLE magazine (
+  myoid bigint PRIMARY KEY, title text NOT NULL,
+  display_number integer, issueno integer NOT NULL DEFAULT 0,
+  issuevolume integer NOT NULL DEFAULT 0
+);
 -- Test-only related table that exercises table sections.
 CREATE TABLE book_note (
   myoid bigserial PRIMARY KEY, item_oid bigint NOT NULL,
@@ -26,6 +36,12 @@ VALUES
  ('0000000001', '9780000000019', '100% Wild_Cards', 'Test Author', 'Test Press', '2000', 1, NULL, NULL);
 
 INSERT INTO item_borrower (item_oid, type, memberid) VALUES (1, 'Book', 'M1'), (2, 'Book', 'M2');
+INSERT INTO journal (myoid, title, display_number, issueno, issuevolume) VALUES
+ (1, 'Hidden Journal Values', -1, 0, 0),
+ (2, 'Visible Journal Values', 42, 3, 2025);
+INSERT INTO magazine (myoid, title, display_number, issueno, issuevolume) VALUES
+ (1, 'Hidden Magazine Values', -1, 0, 0),
+ (2, 'Visible Magazine Values', 42, 3, 2025);
 
 UPDATE book SET description = E'A comic <i>space</i> opera.\nSecond line.',
   keyword = 'comedy, towel'
