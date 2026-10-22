@@ -17,4 +17,5 @@ This is a read-only FastAPI web browser for BiblioteQ PostgreSQL and SQLite data
 
 - Commit per rational unit of change using Conventional Commits.
 - Record architectural decisions as ADRs in `docs/arch/decisions/`; architecture docs go in `docs/arch/`.
+- Follow the release process in `docs/releases.md`, including the changelog and SemVer requirements.
 - Run `ruff check .` and `pytest` before committing.

@@ -87,6 +87,11 @@ Architecture documentation is in [docs/arch/](docs/arch/).
 
 Project planning: [roadmap](docs/roadmap.md) and [candidate features](docs/candidate-features.md).
 
+## Releases
+
+Releases follow [Semantic Versioning](https://semver.org/). See [CHANGELOG.md](CHANGELOG.md) for
+release history.
+
 ## License
 
 [MIT](LICENSE)
