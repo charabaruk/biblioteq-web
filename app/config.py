@@ -23,6 +23,22 @@ class Settings:
     site_title: str = "Library Collection"
     log_level: str = "INFO"
     root_path: str = ""
+    natural_sort: bool = True
+    natural_sort_numbers: str = "integer"  # "integer" or "decimal"
+
+
+_BOOLEANS = {"true": True, "1": True, "yes": True, "on": True}
+_BOOLEANS |= {"false": False, "0": False, "no": False, "off": False}
+_SORT_NUMBERS = ("integer", "decimal")
+
+
+def _bool(name: str, default: bool) -> bool:
+    raw = os.environ.get(name, "").strip().lower()
+    if raw == "":
+        return default
+    if raw not in _BOOLEANS:
+        raise ConfigError(f"{name} must be true or false")
+    return _BOOLEANS[raw]
 
 
 def _int(name: str, default: int, minimum: int = 1) -> int:
@@ -46,6 +62,9 @@ def load_settings() -> Settings:
     # The schema ends up in search_path, so it must be a plain identifier.
     if not _IDENTIFIER.match(schema):
         raise ConfigError("BIBLIOTEQ_DB_SCHEMA must be a plain SQL identifier")
+    sort_numbers = os.environ.get("BIBLIOTEQ_NATURAL_SORT_NUMBERS", "").strip().lower() or "integer"
+    if sort_numbers not in _SORT_NUMBERS:
+        raise ConfigError("BIBLIOTEQ_NATURAL_SORT_NUMBERS must be integer or decimal")
     return Settings(
         db_url=db_url,
         db_schema=schema,
@@ -56,6 +75,8 @@ def load_settings() -> Settings:
         site_title=os.environ.get("BIBLIOTEQ_SITE_TITLE", "Library Collection"),
         log_level=os.environ.get("BIBLIOTEQ_LOG_LEVEL", "INFO").upper(),
         root_path=os.environ.get("BIBLIOTEQ_ROOT_PATH", "").rstrip("/"),
+        natural_sort=_bool("BIBLIOTEQ_NATURAL_SORT", True),
+        natural_sort_numbers=sort_numbers,
     )
 
 
