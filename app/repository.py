@@ -4,6 +4,7 @@ import logging
 import re
 from dataclasses import dataclass, field
 
+from natsort import natsort_keygen, ns
 from sqlalchemy import Connection, text
 
 from app.item_types import (
@@ -147,24 +148,75 @@ def _flag(column: str | None) -> str:
     return f"CASE WHEN {quote(column)} IS NOT NULL THEN 1 ELSE 0 END"
 
 
+def _where_sql(spec: ItemType, n_terms: int) -> str:
+    if not n_terms:
+        return ""
+    # Every term must match at least one searchable column.
+    cols = spec.search_columns or (spec.title,)
+    clauses = [
+        "(" + " OR ".join(f"lower({_text(c)}) LIKE lower(:t{i}) ESCAPE '\\'" for c in cols) + ")"
+        for i in range(n_terms)
+    ]
+    return " WHERE " + " AND ".join(clauses)
+
+
 def _select_sql(spec: ItemType, n_terms: int) -> str:
-    sql = (
+    return (
         f"SELECT '{spec.key}' AS type, {quote(spec.pk)} AS id, {_text(spec.title)} AS title, "
         f"{_text(spec.creator)} AS creator, {_text(spec.identifier)} AS identifier, "
         f"{_flag(spec.front_cover)} AS has_cover "
-        f"FROM {quote(spec.table)}"
+        f"FROM {quote(spec.table)}" + _where_sql(spec, n_terms)
     )
-    if n_terms:
-        # Every term must match at least one searchable column.
-        cols = spec.search_columns or (spec.title,)
-        clauses = [
-            "("
-            + " OR ".join(f"lower({_text(c)}) LIKE lower(:t{i}) ESCAPE '\\'" for c in cols)
-            + ")"
-            for i in range(n_terms)
-        ]
-        sql += " WHERE " + " AND ".join(clauses)
-    return sql
+
+
+def _keys_sql(spec: ItemType, n_terms: int) -> str:
+    return (
+        f"SELECT '{spec.key}' AS type, {quote(spec.pk)} AS id, {_text(spec.title)} AS title "
+        f"FROM {quote(spec.table)}" + _where_sql(spec, n_terms)
+    )
+
+
+def title_sort_key(numbers: str):
+    """Natural, case-insensitive sort key; digit runs are integers or decimals."""
+    keygen = natsort_keygen(alg=ns.IGNORECASE | (ns.FLOAT if numbers == "decimal" else ns.INT))
+    return lambda title: keygen(title or "")
+
+
+def _natural_page(
+    conn: Connection,
+    specs: list[ItemType],
+    terms: list[str],
+    params: dict[str, object],
+    page: int,
+    page_size: int,
+    numbers: str,
+) -> Page:
+    # Sorting happens here because the database has no portable natural collation.
+    union = " UNION ALL ".join(_keys_sql(s, len(terms)) for s in specs)
+    key = title_sort_key(numbers)
+    keys = sorted(
+        conn.execute(text(union), params).all(),
+        key=lambda r: (key(r.title), r.type, r.id),
+    )
+    total = len(keys)
+    page = max(1, min(page, max(1, -(-total // page_size))))
+    window = keys[(page - 1) * page_size : page * page_size]
+
+    by_type: dict[str, list[int]] = {}
+    for row in window:
+        by_type.setdefault(row.type, []).append(row.id)
+    found: dict[tuple[str, int], dict] = {}
+    for spec in specs:
+        ids = by_type.get(spec.key)
+        if not ids:
+            continue
+        marks = ", ".join(f":i{n}" for n in range(len(ids)))
+        sql = f"{_select_sql(spec, 0)} WHERE {quote(spec.pk)} IN ({marks})"
+        rows = conn.execute(text(sql), {f"i{n}": v for n, v in enumerate(ids)}).mappings()
+        found.update({(r["type"], r["id"]): dict(r) for r in rows})
+    conn.rollback()
+    items = [found[(r.type, r.id)] for r in window if (r.type, r.id) in found]
+    return Page(items, total, page, page_size)
 
 
 def search(
@@ -174,8 +226,13 @@ def search(
     type_keys: list[str],
     page: int,
     page_size: int,
+    natural: str | None = None,
 ) -> Page:
-    """Search the given types (all available if empty). An empty query lists everything."""
+    """Search the given types (all available if empty). An empty query lists everything.
+
+    `natural` is "integer" or "decimal" to order titles naturally in Python;
+    None orders in SQL by lowercased title.
+    """
     specs = [catalog.types[k] for k in type_keys if k in catalog.types] or list(
         catalog.types.values()
     )
@@ -183,6 +240,8 @@ def search(
         return Page([], 0, 1, page_size)
     terms = parse_terms(query)
     params: dict[str, object] = {f"t{i}": _like_pattern(t) for i, t in enumerate(terms)}
+    if natural:
+        return _natural_page(conn, specs, terms, params, page, page_size, natural)
     union = " UNION ALL ".join(_select_sql(s, len(terms)) for s in specs)
 
     total = conn.execute(text(f"SELECT count(*) FROM ({union}) u"), params).scalar_one()

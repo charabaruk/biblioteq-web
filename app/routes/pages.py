@@ -47,7 +47,10 @@ def search(
     catalog: Catalog = Depends(get_catalog),
 ):
     selected = [type] if type in catalog.types else []
-    result = repository.search(conn, catalog, q, selected, page, get_settings().page_size)
+    settings = get_settings()
+    result = repository.search(
+        conn, catalog, q, selected, page, settings.page_size, settings.title_sort
+    )
     pager = "/search?" + urlencode({"q": q, "type": type})
     return templates.TemplateResponse(
         request,
@@ -72,7 +75,10 @@ def browse(
     catalog: Catalog = Depends(get_catalog),
 ):
     spec = require_type(type_key, catalog)
-    result = repository.search(conn, catalog, "", [spec.key], page, get_settings().page_size)
+    settings = get_settings()
+    result = repository.search(
+        conn, catalog, "", [spec.key], page, settings.page_size, settings.title_sort
+    )
     return templates.TemplateResponse(
         request,
         "browse.html",

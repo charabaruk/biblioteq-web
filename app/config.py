@@ -26,6 +26,10 @@ class Settings:
     natural_sort: bool = True
     natural_sort_numbers: str = "integer"  # "integer" or "decimal"
 
+    @property
+    def title_sort(self) -> str | None:
+        return self.natural_sort_numbers if self.natural_sort else None
+
 
 _BOOLEANS = {"true": True, "1": True, "yes": True, "on": True}
 _BOOLEANS |= {"false": False, "0": False, "no": False, "off": False}
