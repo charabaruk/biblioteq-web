@@ -8,7 +8,7 @@ The initial v0.2 scope is:
 
 - Show Music CD tracks ordered by disc and track number. *(done)*
 - Use square images for Music CDs on browse pages; retain the existing aspect ratio for other item types. *(done)*
-- Sort titles naturally in browse and other title-ordered results (application-side), so for example `Volume 2` precedes `Volume 10`.
+- Sort titles naturally in browse and other title-ordered results (application-side), so for example `Volume 2` precedes `Volume 10`. *(done)*
 
 ## v0.3: Localization and Holdings Information
 
