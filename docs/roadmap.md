@@ -6,25 +6,34 @@ This roadmap is directional and has no date commitments. It groups candidate wor
 
 The initial v0.2 scope is:
 
-- List attached files for supported item types without retrieving or serving file contents.
-- Show Music CD tracks ordered by disc and track number.
-- Use square images for Music CDs on browse pages; retain the existing aspect ratio for other item types.
+- Show Music CD tracks ordered by disc and track number. *(done)*
+- Use square images for Music CDs on browse pages; retain the existing aspect ratio for other item types. *(done)*
+- Sort titles naturally in browse and other title-ordered results (application-side), so for example `Volume 2` precedes `Volume 10`.
 
-## v0.3: Related Catalog Records
+## v0.3: Localization and Holdings Information
 
 Proposed focus:
 
-- Add book series pages.
+- Initial localization support: replace bare strings in templates with translatable strings and generate translation catalogs.
+- Show information about individual item copies on item pages.
+- Add pages for item locations and browsing items at them.
+
+## v0.4: Related Catalog Records
+
+Proposed focus:
+
+- Add book series pages (grouping books that share a non-empty series title and showing volume strings).
 - Add publication-level detail pages for journals and magazines, grouping issues by ISSN.
-- Initial localization support.
+- Add category browsing and author/artist browsing.
+- Improve search with call-number and Dewey-class lookup.
 
-## v0.4: Photograph Galleries
+## v0.5: Photograph Galleries and Attached Files
 
 Proposed focus:
 
-- Add a gallery of a collection's photographs. This complements, but is separate from, the collection thumbnail introduced in v0.2.
+- Add a gallery of a collection’s photographs on its detail page.
+- List files attached to supported item types and, after deciding access policy, content handling, and large-file behavior, consider making those files available for download.
 
-## v0.5: Reassess and Extend
+## v0.6: Reassess and Extend
 
-Use feedback from the preceding releases to choose the next user-facing priority. Attached-file access is a candidate, not a commitment: decide whether downloads are appropriate and define access control, content handling, and large-file behavior before exposing stored file contents. If those questions are unresolved, use this release for the highest-priority browsing or reliability improvements instead.
-
+Use feedback from the preceding releases to choose the next user-facing priority. Caching support (ETag checks for covers and any future file responses) is a candidate for reducing bandwidth use. If higher-priority browsing or reliability work emerges, prefer that instead.
