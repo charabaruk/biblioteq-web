@@ -8,6 +8,7 @@ natsort>=8.4
 pymarc>=5.2
 
 # Development
+babel>=2.18
 pytest>=8.0
 httpx>=0.27
 ruff>=0.6
