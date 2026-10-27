@@ -3,8 +3,8 @@
 {% block content %}
 <article class="detail">
   <div class="covers">
-    {% if item.has_front %}<img src="{{ base }}/cover/{{ item.spec.key }}/{{ item.id }}?side=front" alt="Front cover of {{ item.title }}">{% endif %}
-    {% if item.has_back %}<img src="{{ base }}/cover/{{ item.spec.key }}/{{ item.id }}?side=back" alt="Back cover of {{ item.title }}">{% endif %}
+    {% if item.has_front %}<img src="{{ base }}/cover/{{ item.spec.key }}/{{ item.id }}?side=front" alt="{% trans title=item.title %}Front cover of {{ title }}{% endtrans %}">{% endif %}
+    {% if item.has_back %}<img src="{{ base }}/cover/{{ item.spec.key }}/{{ item.id }}?side=back" alt="{% trans title=item.title %}Back cover of {{ title }}{% endtrans %}">{% endif %}
     {% if not item.has_front and not item.has_back %}<div class="no-cover">{{ item.spec.label }}</div>{% endif %}
   </div>
   <div class="info">
@@ -13,14 +13,28 @@
     {% set a = item.availability %}
     {% if a %}
     <p class="availability {{ 'in' if a.available else 'out' if a.available == 0 else '' }}">
-      {% if a.available is none %}{{ a.total }} cop{{ 'y' if a.total == 1 else 'ies' }} owned
-      {% elif a.available > 0 %}Available: {{ a.available }} of {{ a.total }}
-      {% else %}All {{ a.total }} cop{{ 'y is' if a.total == 1 else 'ies are' }} checked out{% endif %}
+      {% if a.available is none %}
+        {% trans count=a.total %}
+          {{ count }} copy owned
+        {% pluralize %}
+          {{ count }} copies owned
+        {% endtrans %}
+      {% elif a.available > 0 %}
+        {% trans available=a.available, total=a.total %}
+          Available: {{ available }} of {{ total }}
+        {% endtrans %}
+      {% else %}
+        {% trans count=a.total %}
+          All {{ count }} copy is checked out
+        {% pluralize %}
+          All {{ count }} copies are checked out
+        {% endtrans %}
+      {% endif %}
     </p>
     {% endif %}
     {% set multi = item.tabs|length > 1 %}
     {% if multi %}
-    <nav class="tab-nav" data-tabs aria-label="Item sections">
+    <nav class="tab-nav" data-tabs aria-label="{{ pgettext('aria-label', 'Item sections') }}">
       {% for tab in item.tabs %}<a href="#tab-{{ tab.key }}" data-tab="{{ tab.key }}">{{ tab.label }}</a>{% endfor %}
     </nav>
     {% endif %}
@@ -30,7 +44,7 @@
       {% if multi %}<h2 class="tab-title">{{ tab.label }}</h2>{% endif %}
       <div class="tab-body">
         {% if tab.sections is none %}
-        <p><a href="{{ base }}/item/{{ spec.key }}/{{ item.id }}/{{ tab.key }}">Show {{ tab.label }}</a></p>
+        <p><a href="{{ base }}/item/{{ spec.key }}/{{ item.id }}/{{ tab.key }}">{% trans label=tab.label %}Show {{ label }}{% endtrans %}</a></p>
         {% else %}{% include "item/_body.html" %}{% endif %}
       </div>
     </section>

@@ -15,7 +15,7 @@
     {% for t in types %}<a href="{{ base }}/browse/{{ t.key }}">{{ t.label_plural }}</a>{% endfor %}
   </nav>
   <form action="{{ base }}/search" method="get" class="search-mini" role="search">
-    <input type="search" name="q" placeholder="Search" aria-label="Search" value="{{ q or '' }}">
+    <input type="search" name="q" placeholder="{{ pgettext('placeholder', 'Search') }}" aria-label="{{ pgettext('aria-label', 'Search') }}" value="{{ q or '' }}">
   </form>
 </header>
 <main>

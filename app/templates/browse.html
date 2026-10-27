@@ -3,7 +3,9 @@
 {% block title %}{{ spec.label_plural }} - {{ site_title }}{% endblock %}
 {% block content %}
 <h1>{{ spec.label_plural }}</h1>
-<p class="count">{{ result.total }} item{{ '' if result.total == 1 else 's' }}</p>
+<p class="count">
+  {% trans count=result.total %}{{ count }} item{% pluralize %}{{ count }} items{% endtrans %}
+</p>
 <div class="grid">{% for it in result.items %}{{ card(it, spec.label) }}{% endfor %}</div>
 {{ pagination(result, pager) }}
 {% endblock %}
