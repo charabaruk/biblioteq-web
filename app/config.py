@@ -82,6 +82,7 @@ def load_settings() -> Settings:
         root_path=os.environ.get("BIBLIOTEQ_ROOT_PATH", "").rstrip("/"),
         natural_sort=_bool("BIBLIOTEQ_NATURAL_SORT", True),
         natural_sort_numbers=sort_numbers,
+        default_lang=os.environ.get("DEFAULT_LANG", "en").strip().replace("_", "-"),
     )
 
 

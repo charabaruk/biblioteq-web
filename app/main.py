@@ -29,7 +29,7 @@ def create_app() -> FastAPI:
     app.include_router(health.router)
     app.include_router(pages.router)
     app.include_router(covers.router)
-    app.add_middleware(LanguageMiddleware, templates=templates)
+    app.add_middleware(LanguageMiddleware)
 
     @app.exception_handler(HTTPException)
     async def http_error(request: Request, exc: HTTPException) -> HTMLResponse:

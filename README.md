@@ -54,6 +54,7 @@ All settings are environment variables; see [.env.example](.env.example).
 | `BIBLIOTEQ_SITE_TITLE` | `Library Collection` | Title shown in the UI |
 | `BIBLIOTEQ_LOG_LEVEL` | `INFO` | Python log level |
 | `BIBLIOTEQ_ROOT_PATH` | empty | URL prefix when served under a sub-path |
+| `DEFAULT_LANG` | `en` | Default interface language |
 
 ## Endpoints
 
@@ -84,6 +85,23 @@ BIBLIOTEQ_TEST_DB_URL=postgresql+psycopg://user:pw@localhost/scratch_db .venv/bi
 
 The integration tests drop and recreate the `public` schema of `BIBLIOTEQ_TEST_DB_URL`; use a disposable
 database. Without that variable they are skipped.
+
+### Translations
+
+Regenerate the gettext template after changing translatable strings:
+
+```sh
+.venv/bin/pybabel extract -F babel.cfg --project=biblioteq-web --version=0.2.0 --copyright-holder='Chris Charabaruk' --msgid-bugs-address=https://github.com/charabaruk/biblioteq-web/issues -o app/locales/messages.pot .
+```
+
+For a new language, initialize its catalog once with `pybabel init`; use `pybabel update` after
+subsequent template changes, then compile it so the language becomes available in the UI:
+
+```sh
+.venv/bin/pybabel init -i app/locales/messages.pot -d app/locales -l fr
+.venv/bin/pybabel update -i app/locales/messages.pot -d app/locales
+.venv/bin/pybabel compile -d app/locales
+```
 
 Architecture documentation is in [docs/arch/](docs/arch/).
 

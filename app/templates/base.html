@@ -17,6 +17,16 @@
   <form action="{{ base }}/search" method="get" class="search-mini" role="search">
     <input type="search" name="q" placeholder="{{ pgettext('placeholder', 'Search') }}" aria-label="{{ pgettext('aria-label', 'Search') }}" value="{{ q or '' }}">
   </form>
+  {% if languages|length > 1 %}
+  <form action="{{ base }}/language" method="get" class="language-select">
+    <input type="hidden" name="next" value="{{ base }}{{ request.scope.path }}{% if request.url.query %}?{{ request.url.query }}{% endif %}">
+    <label for="language">{{ _('Language') }}</label>
+    <select id="language" name="lang">
+      {% for option in languages %}<option value="{{ option.code }}" {{ 'selected' if option.code == lang }}>{{ option.name }}</option>{% endfor %}
+    </select>
+    <button type="submit">{{ _('Apply') }}</button>
+  </form>
+  {% endif %}
 </header>
 <main>
 {% block content %}{% endblock %}

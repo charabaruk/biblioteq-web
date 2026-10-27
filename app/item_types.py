@@ -9,20 +9,54 @@ connected database are dropped at startup by `resolve()`, so differences between
 BiblioteQ versions degrade gracefully.
 """
 
+import gettext
 import re
 from collections.abc import Iterator
-from dataclasses import dataclass, replace
-from gettext import gettext as _
-from gettext import pgettext
+from dataclasses import dataclass, fields, is_dataclass, replace
+from typing import TypeVar
 
 _IDENTIFIER = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
+
+
+@dataclass(frozen=True)
+class Message:
+    msgid: str
+    context: str | None = None
+
+
+def _(msgid: str) -> Message:
+    return Message(msgid)
+
+
+def pgettext(context: str, msgid: str) -> Message:
+    return Message(msgid, context)
+
+
+DisplayText = str | Message
+T = TypeVar("T")
+
+
+def localize_labels(value: T, translations: gettext.NullTranslations) -> T:
+    if isinstance(value, Message):
+        if value.context is None:
+            return translations.gettext(value.msgid)  # type: ignore[return-value]
+        return translations.pgettext(value.context, value.msgid)  # type: ignore[return-value]
+    if isinstance(value, tuple):
+        return tuple(localize_labels(item, translations) for item in value)  # type: ignore[return-value]
+    if is_dataclass(value) and not isinstance(value, type):
+        localized = {
+            field.name: localize_labels(getattr(value, field.name), translations)
+            for field in fields(value)
+        }
+        return replace(value, **localized)
+    return value
 
 
 @dataclass(frozen=True)
 class FieldsSection:
     """Short label/value pairs from the item's own table, rendered as a definition list."""
 
-    fields: tuple[tuple[str, str], ...]  # (column, label)
+    fields: tuple[tuple[str, DisplayText], ...]  # (column, label)
 
 
 @dataclass(frozen=True)
@@ -30,20 +64,20 @@ class TextSection:
     """One prose column from the item's own table."""
 
     column: str
-    label: str
+    label: DisplayText | None
 
 
 @dataclass(frozen=True)
 class TableSection:
     """Rows of a related table whose `fk` column holds the item's primary key."""
 
-    label: str
+    label: DisplayText
     table: str
     fk: str
-    columns: tuple[tuple[str, str], ...]  # (column, header)
+    columns: tuple[tuple[str, DisplayText], ...]  # (column, header)
     order_by: tuple[str, ...] = ()  # must start with group_by when grouping
     group_by: str | None = None
-    group_label: str = ""  # prefix for group headings, e.g. "Disc"
+    group_label: DisplayText = ""  # prefix for group headings, e.g. "Disc"
     limit: int = 500
 
 
@@ -53,7 +87,7 @@ SectionSpec = FieldsSection | TextSection | TableSection
 @dataclass(frozen=True)
 class TabSpec:
     key: str  # used in URLs and fragments
-    label: str
+    label: DisplayText
     sections: tuple[SectionSpec, ...]
     lazy: bool = False  # content is fetched on demand, not rendered with the item page
     template: str | None = None  # optional template overriding the default tab body
@@ -62,16 +96,16 @@ class TabSpec:
 @dataclass(frozen=True)
 class ItemType:
     key: str  # URL slug
-    label: str  # singular display name
-    label_plural: str  # plural display name
+    label: DisplayText  # singular display name
+    label_plural: DisplayText  # plural display name
     table: str
     title: str
     creator: str | None = None
     identifier: str | None = None  # primary identifier shown on cards (ISBN, ISSN, ...)
-    identifier_label: str | None = None  # display label for primary identifier
+    identifier_label: DisplayText | None = None  # display label for primary identifier
     search_columns: tuple[str, ...] = ()
-    detail_fields: tuple[tuple[str, str], ...] = ()  # (column, label)
-    text_fields: tuple[tuple[str, str], ...] = ()  # prose columns, shown above detail_fields
+    detail_fields: tuple[tuple[str, DisplayText], ...] = ()  # (column, label)
+    text_fields: tuple[tuple[str, DisplayText], ...] = ()  # prose fields
     tabs: tuple[TabSpec, ...] = ()  # empty: a Main tab is built from the fields above
     quantity: str | None = None
     borrower_type: str | None = None  # value of item_borrower.type for this table
@@ -162,14 +196,14 @@ ITEM_TYPES: tuple[ItemType, ...] = (
         title="title",
         creator="dvddirector",
         identifier="id",
-        identifier_label="UPC",
+        identifier_label=_("UPC"),
         search_columns=("title", "id", "dvdactor", "dvddirector", "studio", "category", "keyword"),
         tabs=(
             TabSpec(
                 key="main",
                 label=pgettext("tab-dvd", "Main"),
                 sections=(
-                    TextSection("description", "Description"),
+                    TextSection("description", _("Description")),
                     FieldsSection(
                         (
                             ("dvdformat", _("Format")),
@@ -218,7 +252,7 @@ ITEM_TYPES: tuple[ItemType, ...] = (
         title="title",
         creator="artist",
         identifier="id",
-        identifier_label="Catalogue Number",
+        identifier_label=_("Catalogue Number"),
         search_columns=("title", "artist", "id", "recording_label", "category"),
         tabs=(
             TabSpec(
@@ -232,9 +266,9 @@ ITEM_TYPES: tuple[ItemType, ...] = (
                         fk="item_oid",
                         columns=(
                             ("songnum", "#"),
-                            ("songtitle", "Title"),
-                            ("runtime", "Length"),
-                            ("composer", "Composer"),
+                            ("songtitle", _("Title")),
+                            ("runtime", _("Length")),
+                            ("composer", _("Composer")),
                         ),
                         order_by=("albumnum", "songnum"),
                         group_by="albumnum",
@@ -285,7 +319,7 @@ ITEM_TYPES: tuple[ItemType, ...] = (
         title="title",
         creator="publisher",
         identifier="id",
-        identifier_label="ISSN",
+        identifier_label=_("ISSN"),
         search_columns=("title", "id", "publisher", "category", "keyword"),
         tabs=(
             TabSpec(
@@ -340,7 +374,7 @@ ITEM_TYPES: tuple[ItemType, ...] = (
         title="title",
         creator="publisher",
         identifier="id",
-        identifier_label="ISSN",
+        identifier_label=_("ISSN"),
         search_columns=("title", "id", "publisher", "category", "keyword"),
         tabs=(
             TabSpec(
@@ -395,7 +429,7 @@ ITEM_TYPES: tuple[ItemType, ...] = (
         title="title",
         creator="publisher",
         identifier="id",
-        identifier_label="UPC",
+        identifier_label=_("UPC"),
         search_columns=("title", "id", "publisher", "genre", "vgplatform", "keyword"),
         tabs=(
             TabSpec(
@@ -447,7 +481,7 @@ ITEM_TYPES: tuple[ItemType, ...] = (
         title="document_title",
         creator="author",
         identifier="document_id",
-        identifier_label="Document ID",
+        identifier_label=_("Document ID"),
         search_columns=("document_title", "author", "document_id", "client", "job_number", "notes"),
         detail_fields=(),
         tabs=(
@@ -497,16 +531,16 @@ ITEM_TYPES: tuple[ItemType, ...] = (
         table="photograph_collection",
         title="title",
         identifier="id",
-        identifier_label="ID",
+        identifier_label=_("ID"),
         search_columns=("title", "id", "accession_number", "about", "notes"),
         detail_fields=(),
-        text_fields=(("about", "About"), ("notes", "Notes")),
+        text_fields=(("about", _("About")), ("notes", _("Notes"))),
         tabs=(
             TabSpec(
                 key="main",
                 label=pgettext("tab-photograph", "Main"),
                 sections=(
-                    TextSection("about", "About"),
+                    TextSection("about", _("About")),
                     FieldsSection(
                         (
                             ("id", _("ID")),
@@ -583,7 +617,7 @@ def resolve(
     declared = spec.tabs or (
         TabSpec(
             key="main",
-            label="Main",
+            label=pgettext("tab-default", "Main"),
             sections=(
                 *(TextSection(c, label) for c, label in spec.text_fields),
                 FieldsSection(spec.detail_fields),

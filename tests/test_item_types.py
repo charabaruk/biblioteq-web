@@ -1,13 +1,16 @@
 from dataclasses import replace
+from gettext import NullTranslations
 
 import pytest
 
 from app.item_types import (
     ITEM_TYPES,
     FieldsSection,
+    Message,
     TableSection,
     TabSpec,
     TextSection,
+    localize_labels,
     quote,
     related_tables,
     resolve,
@@ -27,6 +30,27 @@ def test_quote_rejects_unsafe_names(bad):
 def test_registry_keeps_prose_out_of_detail_fields():
     for spec in ITEM_TYPES:
         assert not {c for c, _ in spec.detail_fields} & {c for c, _ in spec.text_fields}
+
+
+def test_localize_labels_translates_nested_values_without_mutating_registry():
+    class FrenchTranslations(NullTranslations):
+        def gettext(self, message):
+            return {"Description": "Description traduite"}.get(message, message)
+
+        def pgettext(self, context, message):
+            return {
+                ("item-type", "Book"): "Livre",
+                ("tab-book", "Main"): "Principal",
+            }.get((context, message), self.gettext(message))
+
+    book = next(spec for spec in ITEM_TYPES if spec.key == "book")
+    localized = localize_labels(book, FrenchTranslations())
+
+    assert localized.label == "Livre"
+    assert localized.tabs[0].label == "Principal"
+    assert localized.tabs[0].sections[0].label == "Description traduite"
+    assert book.label == Message("Book", "item-type")
+    assert localized.table == book.table == "book"
 
 
 def _section_columns(spec):

@@ -32,6 +32,8 @@ a:hover { text-decoration: underline; }
 .brand { font-weight: 700; font-size: 1.2rem; color: var(--fg); }
 .site-header nav { display: flex; flex-wrap: wrap; gap: 0.75rem; flex: 1; }
 .search-mini input { padding: 0.35rem 0.6rem; }
+.language-select { display: flex; flex-wrap: wrap; align-items: center; gap: 0.35rem; }
+.language-select select { max-width: 9rem; }
 
 main { max-width: 1100px; margin: 0 auto; padding: 1.5rem; }
 

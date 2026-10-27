@@ -1,16 +1,17 @@
 """HTML pages: home, search, browse and item detail."""
 
 from typing import Annotated
-from urllib.parse import urlencode
+from urllib.parse import urlencode, urlsplit
 
 from fastapi import APIRouter, Depends, HTTPException, Path, Query, Request
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, RedirectResponse
 from sqlalchemy import Connection
 
 from app import repository
 from app.config import get_settings
 from app.db import get_conn
-from app.deps import get_catalog, require_type
+from app.deps import get_localized_catalog, require_type
+from app.locale import LANGUAGE_COOKIE, available_languages
 from app.repository import Catalog
 from app.templating import templates
 
@@ -21,11 +22,48 @@ PageNo = Annotated[int, Query(ge=1, le=100000)]
 HOME_RECENT = 6
 
 
+def _local_redirect_target(target: str, root_path: str) -> str:
+    parsed = urlsplit(target)
+    if (
+        not target.startswith("/")
+        or target.startswith("//")
+        or "\\" in target
+        or parsed.scheme
+        or parsed.netloc
+    ):
+        return f"{root_path}/"
+    if root_path and target != root_path and not target.startswith(f"{root_path}/"):
+        return f"{root_path}/"
+    return target
+
+
+@router.get("/language")
+def select_language(
+    request: Request,
+    lang: Annotated[str, Query(max_length=32)],
+    next_path: Annotated[str, Query(alias="next", max_length=2048)] = "/",
+) -> RedirectResponse:
+    if lang not in {option.code for option in available_languages()}:
+        raise HTTPException(status_code=400, detail="Unsupported language")
+    root_path = request.scope.get("root_path", "")
+    response = RedirectResponse(_local_redirect_target(next_path, root_path), status_code=303)
+    response.set_cookie(
+        LANGUAGE_COOKIE,
+        lang,
+        max_age=31536000,
+        path=root_path or "/",
+        secure=request.url.scheme == "https",
+        httponly=True,
+        samesite="lax",
+    )
+    return response
+
+
 @router.get("/", response_class=HTMLResponse)
 def home(
     request: Request,
     conn: Connection = Depends(get_conn),
-    catalog: Catalog = Depends(get_catalog),
+    catalog: Catalog = Depends(get_localized_catalog),
 ):
     sections = [
         (spec, repository.recent(conn, spec, HOME_RECENT)) for spec in catalog.types.values()
@@ -44,7 +82,7 @@ def search(
     type: Annotated[str, Query(max_length=40)] = "",
     page: PageNo = 1,
     conn: Connection = Depends(get_conn),
-    catalog: Catalog = Depends(get_catalog),
+    catalog: Catalog = Depends(get_localized_catalog),
 ):
     selected = [type] if type in catalog.types else []
     settings = get_settings()
@@ -72,7 +110,7 @@ def browse(
     type_key: str,
     page: PageNo = 1,
     conn: Connection = Depends(get_conn),
-    catalog: Catalog = Depends(get_catalog),
+    catalog: Catalog = Depends(get_localized_catalog),
 ):
     spec = require_type(type_key, catalog)
     settings = get_settings()
@@ -98,7 +136,7 @@ def item_detail(
     type_key: str,
     item_id: ItemId,
     conn: Connection = Depends(get_conn),
-    catalog: Catalog = Depends(get_catalog),
+    catalog: Catalog = Depends(get_localized_catalog),
 ):
     spec = require_type(type_key, catalog)
     item = repository.get_item(conn, catalog, spec, item_id)
@@ -116,7 +154,7 @@ def item_tab(
     item_id: ItemId,
     tab_key: str,
     conn: Connection = Depends(get_conn),
-    catalog: Catalog = Depends(get_catalog),
+    catalog: Catalog = Depends(get_localized_catalog),
 ):
     """One tab: a fragment for the tab script, the whole item page for everyone else."""
     spec = require_type(type_key, catalog)

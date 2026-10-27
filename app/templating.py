@@ -1,20 +1,29 @@
 """Jinja2 environment shared by page routes."""
 
+import gettext
 from pathlib import Path
 
 from fastapi import Request
 from fastapi.templating import Jinja2Templates
 
 from app.config import get_settings
+from app.locale import available_languages
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 
 def _context(request: Request) -> dict:
+    translations = getattr(request.state, "translations", gettext.NullTranslations())
+    translate = translations.gettext
     return {
         "site_title": get_settings().site_title,
         "base": request.scope.get("root_path", ""),
         "lang": getattr(request.state, "lang", get_settings().default_lang),
+        "languages": available_languages(),
+        "_": translate,
+        "gettext": translate,
+        "ngettext": translations.ngettext,
+        "pgettext": translations.pgettext,
     }
 
 

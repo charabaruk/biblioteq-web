@@ -15,6 +15,12 @@ def test_schema_defaults_to_public(monkeypatch):
     assert load_settings().db_schema == "public"
 
 
+def test_default_language_setting_normalizes_locale_separator(monkeypatch):
+    monkeypatch.setenv("BIBLIOTEQ_DB_URL", "postgresql+psycopg://u:p@h/d")
+    monkeypatch.setenv("DEFAULT_LANG", "fr_CA")
+    assert load_settings().default_lang == "fr-CA"
+
+
 def test_schema_override(monkeypatch):
     monkeypatch.setenv("BIBLIOTEQ_DB_URL", "postgresql+psycopg://u:p@h/d")
     monkeypatch.setenv("BIBLIOTEQ_DB_SCHEMA", "library")
