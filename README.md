@@ -1,5 +1,11 @@
 # biblioteq-web
 
+[![CI](https://github.com/charabaruk/biblioteq-web/actions/workflows/ci.yml/badge.svg)](https://github.com/charabaruk/biblioteq-web/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/gh/charabaruk/biblioteq-web/branch/main/graph/badge.svg)](https://codecov.io/gh/charabaruk/biblioteq-web)
+[![License: MIT](https://img.shields.io/github/license/charabaruk/biblioteq-web)](LICENSE)
+[![Latest tag](https://img.shields.io/github/v/tag/charabaruk/biblioteq-web?sort=semver)](https://github.com/charabaruk/biblioteq-web/tags)
+[![Python 3.11–3.15](https://img.shields.io/badge/python-3.11%20%7C%203.15-blue?logo=python&logoColor=white)](pyproject.toml)
+[![Databases](https://img.shields.io/badge/databases-PostgreSQL%20%7C%20SQLite-336791?logo=postgresql&logoColor=white)](docs/arch/decisions/0005-support-sqlite-and-postgresql.md)
 [![Crowdin](https://badges.crowdin.net/biblioteq-web/localized.svg)](https://crowdin.com/project/biblioteq-web)
 
 A read-only web browser for [BiblioteQ](https://github.com/textbrowser/biblioteq) library collections.
