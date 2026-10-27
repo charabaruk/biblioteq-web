@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: biblioteq-web 0.2.0\n"
 "Report-Msgid-Bugs-To: https://github.com/charabaruk/biblioteq-web/issues\n"
-"POT-Creation-Date: 2026-10-27 10:45-0400\n"
+"POT-Creation-Date: 2026-10-27 14:13-0400\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -477,13 +477,10 @@ msgstr ""
 
 #: app/templates/_components.html:22
 #, python-format
-msgid ""
-"\n"
-"      Page %(page)s of %(pages)s\n"
-"    "
+msgid "Page %(page)s of %(pages)s"
 msgstr ""
 
-#: app/templates/_components.html:26
+#: app/templates/_components.html:24
 msgid "Next"
 msgstr ""
 
@@ -554,44 +551,29 @@ msgstr ""
 
 #: app/templates/item.html:17
 #, python-format
-msgid ""
-"\n"
-"          %(count)s copy owned\n"
-"        "
-msgid_plural ""
-"\n"
-"          %(count)s copies owned\n"
-"        "
+msgid "%(count)s copy owned"
+msgid_plural "%(count)s copies owned"
 msgstr[0] ""
 msgstr[1] ""
 
-#: app/templates/item.html:23
+#: app/templates/item.html:19
 #, python-format
-msgid ""
-"\n"
-"          Available: %(available)s of %(total)s\n"
-"        "
+msgid "Available: %(available)s of %(total)s"
 msgstr ""
 
-#: app/templates/item.html:27
+#: app/templates/item.html:21
 #, python-format
-msgid ""
-"\n"
-"          All %(count)s copy is checked out\n"
-"        "
-msgid_plural ""
-"\n"
-"          All %(count)s copies are checked out\n"
-"        "
+msgid "All %(count)s copy is checked out"
+msgid_plural "All %(count)s copies are checked out"
 msgstr[0] ""
 msgstr[1] ""
 
-#: app/templates/item.html:37
+#: app/templates/item.html:27
 msgctxt "aria-label"
 msgid "Item sections"
 msgstr ""
 
-#: app/templates/item.html:47
+#: app/templates/item.html:37
 #, python-format
 msgid "Show %(label)s"
 msgstr ""

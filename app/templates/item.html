@@ -14,21 +14,11 @@
     {% if a %}
     <p class="availability {{ 'in' if a.available else 'out' if a.available == 0 else '' }}">
       {% if a.available is none %}
-        {% trans count=a.total %}
-          {{ count }} copy owned
-        {% pluralize %}
-          {{ count }} copies owned
-        {% endtrans %}
+        {% trans count=a.total %}{{ count }} copy owned{% pluralize %}{{ count }} copies owned{% endtrans %}
       {% elif a.available > 0 %}
-        {% trans available=a.available, total=a.total %}
-          Available: {{ available }} of {{ total }}
-        {% endtrans %}
+        {% trans available=a.available, total=a.total %}Available: {{ available }} of {{ total }}{% endtrans %}
       {% else %}
-        {% trans count=a.total %}
-          All {{ count }} copy is checked out
-        {% pluralize %}
-          All {{ count }} copies are checked out
-        {% endtrans %}
+        {% trans count=a.total %}All {{ count }} copy is checked out{% pluralize %}All {{ count }} copies are checked out{% endtrans %}
       {% endif %}
     </p>
     {% endif %}
