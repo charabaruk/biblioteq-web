@@ -12,6 +12,8 @@ BiblioteQ versions degrade gracefully.
 import re
 from collections.abc import Iterator
 from dataclasses import dataclass, replace
+from gettext import gettext as _
+from gettext import pgettext
 
 _IDENTIFIER = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
 
@@ -81,13 +83,13 @@ class ItemType:
 ITEM_TYPES: tuple[ItemType, ...] = (
     ItemType(
         key="book",
-        label="Book",
-        label_plural="Books",
+        label=pgettext("item-type", "Book"),
+        label_plural=pgettext("item-type", "Books"),
         table="book",
         title="title",
         creator="author",
         identifier="isbn13",
-        identifier_label="ISBN-13",
+        identifier_label=_("ISBN-13"),
         search_columns=(
             "title",
             "series_title",
@@ -101,47 +103,47 @@ ITEM_TYPES: tuple[ItemType, ...] = (
         tabs=(
             TabSpec(
                 key="main",
-                label="Main",
+                label=pgettext("tab-book", "Main"),
                 sections=(
-                    TextSection("description", "Description"),
+                    TextSection("description", _("Description")),
                     FieldsSection(
                         (
-                            ("series_title", "Series Title"),
-                            ("volume_number", "Volume Number"),
-                            ("author", "Authors"),
-                            ("publisher", "Publisher"),
-                            ("pdate", "Publication Date"),
-                            ("place", "Place of Publication"),
-                            ("edition", "Edition"),
-                            ("category", "Categories"),
-                            ("language", "Language"),
-                            ("target_audience", "Target Audience"),
-                            ("id", "ISBN-10"),
-                            ("isbn13", "ISBN-13"),
-                            ("binding_type", "Book Binding Type"),
-                            ("location", "Location"),
-                            ("callnumber", "Call Number"),
+                            ("series_title", _("Series Title")),
+                            ("volume_number", _("Volume Number")),
+                            ("author", _("Authors")),
+                            ("publisher", _("Publisher")),
+                            ("pdate", _("Publication Date")),
+                            ("place", _("Place of Publication")),
+                            ("edition", _("Edition")),
+                            ("category", _("Categories")),
+                            ("language", _("Language")),
+                            ("target_audience", _("Target Audience")),
+                            ("id", _("ISBN-10")),
+                            ("isbn13", _("ISBN-13")),
+                            ("binding_type", _("Book Binding Type")),
+                            ("location", _("Location")),
+                            ("callnumber", _("Call Number")),
                         )
                     ),
                 ),
             ),
             TabSpec(
                 key="details",
-                label="Details",
+                label=pgettext("tab-book", "Details"),
                 sections=(
                     FieldsSection(
                         (
-                            ("lccontrolnumber", "LC Control Number"),
-                            ("deweynumber", "Dewey Class Number"),
-                            ("originality", "Originality"),
-                            ("condition", "Condition"),
-                            ("accession_number", "Accession Number"),
-                            ("origin", "Origin"),
-                            ("date_of_reform", "Reform Date"),
-                            ("purchase_date", "Purchase Date"),
-                            ("price", "Price"),
-                            ("monetary_units", "Monetary Units"),
-                            ("keyword", "Keywords"),
+                            ("lccontrolnumber", _("LC Control Number")),
+                            ("deweynumber", _("Dewey Class Number")),
+                            ("originality", _("Originality")),
+                            ("condition", _("Condition")),
+                            ("accession_number", _("Accession Number")),
+                            ("origin", _("Origin")),
+                            ("date_of_reform", _("Reform Date")),
+                            ("purchase_date", _("Purchase Date")),
+                            ("price", _("Price")),
+                            ("monetary_units", _("Monetary Units")),
+                            ("keyword", _("Keywords")),
                         )
                     ),
                 ),
@@ -154,8 +156,8 @@ ITEM_TYPES: tuple[ItemType, ...] = (
     ),
     ItemType(
         key="dvd",
-        label="DVD",
-        label_plural="DVDs",
+        label=pgettext("item-type", "DVD"),
+        label_plural=pgettext("item-type", "DVDs"),
         table="dvd",
         title="title",
         creator="dvddirector",
@@ -165,39 +167,39 @@ ITEM_TYPES: tuple[ItemType, ...] = (
         tabs=(
             TabSpec(
                 key="main",
-                label="Main",
+                label=pgettext("tab-dvd", "Main"),
                 sections=(
                     TextSection("description", "Description"),
                     FieldsSection(
                         (
-                            ("dvdformat", "Format"),
-                            ("studio", "Studio"),
-                            ("rdate", "Release Date"),
-                            ("dvddiskcount", "Number of Discs"),
-                            ("dvdrunning", "Runtime"),
-                            ("category", "Categories"),
-                            ("language", "Language"),
-                            ("location", "Location"),
-                            ("dvdrating", "Rating"),
-                            ("dvdregion", "Region"),
-                            ("dvdaspectratio", "Aspect Ratio"),
-                            ("dvddirector", "Director"),
-                            ("dvdactor", "Actors"),
+                            ("dvdformat", _("Format")),
+                            ("studio", _("Studio")),
+                            ("rdate", _("Release Date")),
+                            ("dvddiskcount", _("Number of Discs")),
+                            ("dvdrunning", _("Runtime")),
+                            ("category", _("Categories")),
+                            ("language", _("Language")),
+                            ("location", _("Location")),
+                            ("dvdrating", _("Rating")),
+                            ("dvdregion", _("Region")),
+                            ("dvdaspectratio", _("Aspect Ratio")),
+                            ("dvddirector", _("Director")),
+                            ("dvdactor", _("Actors")),
                         )
                     ),
                 ),
             ),
             TabSpec(
                 key="details",
-                label="Details",
+                label=pgettext("tab-dvd", "Details"),
                 sections=(
                     FieldsSection(
                         (
-                            ("id", "UPC"),
-                            ("price", "Price"),
-                            ("monetary_units", "Monetary Units"),
-                            ("accession_number", "Accession Number"),
-                            ("keyword", "Keywords"),
+                            ("id", _("UPC")),
+                            ("price", _("Price")),
+                            ("monetary_units", _("Monetary Units")),
+                            ("accession_number", _("Accession Number")),
+                            ("keyword", _("Keywords")),
                         )
                     ),
                 ),
@@ -210,8 +212,8 @@ ITEM_TYPES: tuple[ItemType, ...] = (
     ),
     ItemType(
         key="cd",
-        label="Music CD",
-        label_plural="Music CDs",
+        label=pgettext("item-type", "Music CD"),
+        label_plural=pgettext("item-type", "Music CDs"),
         table="cd",
         title="title",
         creator="artist",
@@ -221,11 +223,11 @@ ITEM_TYPES: tuple[ItemType, ...] = (
         tabs=(
             TabSpec(
                 key="main",
-                label="Main",
+                label=pgettext("tab-cd", "Main"),
                 sections=(
-                    TextSection("description", "Description"),
+                    TextSection("description", _("Description")),
                     TableSection(
-                        label="Track Listing",
+                        label=_("Track Listing"),
                         table="cd_songs",
                         fk="item_oid",
                         columns=(
@@ -236,35 +238,35 @@ ITEM_TYPES: tuple[ItemType, ...] = (
                         ),
                         order_by=("albumnum", "songnum"),
                         group_by="albumnum",
-                        group_label="Disc",
+                        group_label=_("Disc"),
                     ),
                     FieldsSection(
                         (
-                            ("artist", "Artist"),
-                            ("cdformat", "Format"),
-                            ("recording_label", "Recording Label"),
-                            ("rdate", "Release Date"),
-                            ("cddiskcount", "Number of Discs"),
-                            ("cdruntime", "Runtime"),
-                            ("category", "Categories"),
-                            ("language", "Language"),
-                            ("id", "Catalogue Number"),
-                            ("location", "Location"),
-                            ("cdaudio", "Audio"),
+                            ("artist", _("Artist")),
+                            ("cdformat", _("Format")),
+                            ("recording_label", _("Recording Label")),
+                            ("rdate", _("Release Date")),
+                            ("cddiskcount", _("Number of Discs")),
+                            ("cdruntime", _("Runtime")),
+                            ("category", _("Categories")),
+                            ("language", _("Language")),
+                            ("id", _("Catalogue Number")),
+                            ("location", _("Location")),
+                            ("cdaudio", _("Audio")),
                         ),
                     ),
                 ),
             ),
             TabSpec(
                 key="details",
-                label="Details",
+                label=pgettext("tab-cd", "Details"),
                 sections=(
                     FieldsSection(
                         (
-                            ("price", "Price"),
-                            ("monetary_units", "Monetary Units"),
-                            ("accession_number", "Accession Number"),
-                            ("keyword", "Keywords"),
+                            ("price", _("Price")),
+                            ("monetary_units", _("Monetary Units")),
+                            ("accession_number", _("Accession Number")),
+                            ("keyword", _("Keywords")),
                         )
                     ),
                 ),
@@ -277,8 +279,8 @@ ITEM_TYPES: tuple[ItemType, ...] = (
     ),
     ItemType(
         key="journal",
-        label="Journal",
-        label_plural="Journals",
+        label=pgettext("item-type", "Journal"),
+        label_plural=pgettext("item-type", "Journals"),
         table="journal",
         title="title",
         creator="publisher",
@@ -288,38 +290,38 @@ ITEM_TYPES: tuple[ItemType, ...] = (
         tabs=(
             TabSpec(
                 key="main",
-                label="Main",
+                label=pgettext("tab-journal", "Main"),
                 sections=(
-                    TextSection("description", "Description"),
+                    TextSection("description", _("Description")),
                     FieldsSection(
                         (
-                            ("publisher", "Publisher"),
-                            ("pdate", "Publication Date"),
-                            ("place", "Place of Publication"),
-                            ("display_number", "Issue Number"),
-                            ("issuevolume", "Volume"),
-                            ("issueno", "Issue"),
-                            ("category", "Categories"),
-                            ("language", "Language"),
-                            ("id", "ISSN"),
-                            ("location", "Location"),
-                            ("callnumber", "Call Number"),
+                            ("publisher", _("Publisher")),
+                            ("pdate", _("Publication Date")),
+                            ("place", _("Place of Publication")),
+                            ("display_number", _("Issue Number")),
+                            ("issuevolume", _("Volume")),
+                            ("issueno", _("Issue")),
+                            ("category", _("Categories")),
+                            ("language", _("Language")),
+                            ("id", _("ISSN")),
+                            ("location", _("Location")),
+                            ("callnumber", _("Call Number")),
                         )
                     ),
                 ),
             ),
             TabSpec(
                 key="details",
-                label="Details",
+                label=pgettext("tab-journal", "Details"),
                 sections=(
                     FieldsSection(
                         (
-                            ("lccontrolnumber", "LC Control Number"),
-                            ("price", "Price"),
-                            ("monetary_units", "Monetary Units"),
-                            ("deweynumber", "Dewey Number"),
-                            ("accession_number", "Accession Number"),
-                            ("keyword", "Keywords"),
+                            ("lccontrolnumber", _("LC Control Number")),
+                            ("price", _("Price")),
+                            ("monetary_units", _("Monetary Units")),
+                            ("deweynumber", _("Dewey Number")),
+                            ("accession_number", _("Accession Number")),
+                            ("keyword", _("Keywords")),
                         )
                     ),
                 ),
@@ -332,8 +334,8 @@ ITEM_TYPES: tuple[ItemType, ...] = (
     ),
     ItemType(
         key="magazine",
-        label="Magazine",
-        label_plural="Magazines",
+        label=pgettext("item-type", "Magazine"),
+        label_plural=pgettext("item-type", "Magazines"),
         table="magazine",
         title="title",
         creator="publisher",
@@ -343,38 +345,38 @@ ITEM_TYPES: tuple[ItemType, ...] = (
         tabs=(
             TabSpec(
                 key="main",
-                label="Main",
+                label=pgettext("tab-magazine", "Main"),
                 sections=(
-                    TextSection("description", "Description"),
+                    TextSection("description", _("Description")),
                     FieldsSection(
                         (
-                            ("publisher", "Publisher"),
-                            ("pdate", "Publication Date"),
-                            ("place", "Place of Publication"),
-                            ("display_number", "Issue Number"),
-                            ("issuevolume", "Volume"),
-                            ("issueno", "Issue"),
-                            ("category", "Categories"),
-                            ("language", "Language"),
-                            ("id", "ISSN"),
-                            ("location", "Location"),
-                            ("callnumber", "Call Number"),
+                            ("publisher", _("Publisher")),
+                            ("pdate", _("Publication Date")),
+                            ("place", _("Place of Publication")),
+                            ("display_number", _("Issue Number")),
+                            ("issuevolume", _("Volume")),
+                            ("issueno", _("Issue")),
+                            ("category", _("Categories")),
+                            ("language", _("Language")),
+                            ("id", _("ISSN")),
+                            ("location", _("Location")),
+                            ("callnumber", _("Call Number")),
                         )
                     ),
                 ),
             ),
             TabSpec(
                 key="details",
-                label="Details",
+                label=pgettext("tab-magazine", "Details"),
                 sections=(
                     FieldsSection(
                         (
-                            ("price", "Price"),
-                            ("monetary_units", "Monetary Units"),
-                            ("lccontrolnumber", "LC Control Number"),
-                            ("deweynumber", "Dewey Number"),
-                            ("accession_number", "Accession Number"),
-                            ("keyword", "Keywords"),
+                            ("price", _("Price")),
+                            ("monetary_units", _("Monetary Units")),
+                            ("lccontrolnumber", _("LC Control Number")),
+                            ("deweynumber", _("Dewey Number")),
+                            ("accession_number", _("Accession Number")),
+                            ("keyword", _("Keywords")),
                         )
                     ),
                 ),
@@ -387,8 +389,8 @@ ITEM_TYPES: tuple[ItemType, ...] = (
     ),
     ItemType(
         key="videogame",
-        label="Video Game",
-        label_plural="Video Games",
+        label=pgettext("item-type", "Video Game"),
+        label_plural=pgettext("item-type", "Video Games"),
         table="videogame",
         title="title",
         creator="publisher",
@@ -398,35 +400,35 @@ ITEM_TYPES: tuple[ItemType, ...] = (
         tabs=(
             TabSpec(
                 key="main",
-                label="Main",
+                label=pgettext("tab-videogame", "Main"),
                 sections=(
-                    TextSection("description", "Description"),
+                    TextSection("description", _("Description")),
                     FieldsSection(
                         (
-                            ("vgrating", "Game Rating"),
-                            ("vgplatform", "Platform"),
-                            ("vgmode", "Mode"),
-                            ("publisher", "Publisher"),
-                            ("rdate", "Release Date"),
-                            ("place", "Place of Publication"),
-                            ("genre", "Genres"),
-                            ("language", "Language"),
-                            ("location", "Location"),
+                            ("vgrating", _("Game Rating")),
+                            ("vgplatform", _("Platform")),
+                            ("vgmode", _("Mode")),
+                            ("publisher", _("Publisher")),
+                            ("rdate", _("Release Date")),
+                            ("place", _("Place of Publication")),
+                            ("genre", _("Genres")),
+                            ("language", _("Language")),
+                            ("location", _("Location")),
                         )
                     ),
                 ),
             ),
             TabSpec(
                 key="details",
-                label="Details",
+                label=pgettext("tab-videogame", "Details"),
                 sections=(
                     FieldsSection(
                         (
-                            ("id", "UPC"),
-                            ("price", "Price"),
-                            ("monetary_units", "Monetary Units"),
-                            ("accession_number", "Accession Number"),
-                            ("keyword", "Keywords"),
+                            ("id", _("UPC")),
+                            ("price", _("Price")),
+                            ("monetary_units", _("Monetary Units")),
+                            ("accession_number", _("Accession Number")),
+                            ("keyword", _("Keywords")),
                         )
                     ),
                 ),
@@ -439,8 +441,8 @@ ITEM_TYPES: tuple[ItemType, ...] = (
     ),
     ItemType(
         key="greyliterature",
-        label="Grey Literature",
-        label_plural="Grey Literature",
+        label=pgettext("item-type", "Grey Literature"),
+        label_plural=pgettext("item-type", "Grey Literature"),
         table="grey_literature",
         title="document_title",
         creator="author",
@@ -451,17 +453,17 @@ ITEM_TYPES: tuple[ItemType, ...] = (
         tabs=(
             TabSpec(
                 key="main",
-                label="Main",
+                label=pgettext("tab-greyliterature", "Main"),
                 sections=(
                     FieldsSection(
                         (
-                            ("author", "Authors"),
-                            ("client", "Clients"),
-                            ("document_date", "Document Date"),
-                            ("document_id", "Document ID"),
-                            ("document_type", "Document Type"),
-                            ("job_number", "Job Number"),
-                            ("location", "Location"),
+                            ("author", _("Authors")),
+                            ("client", _("Clients")),
+                            ("document_date", _("Document Date")),
+                            ("document_id", _("Document ID")),
+                            ("document_type", _("Document Type")),
+                            ("job_number", _("Job Number")),
+                            ("location", _("Location")),
                             # File count (computed field)
                         )
                     ),
@@ -469,20 +471,20 @@ ITEM_TYPES: tuple[ItemType, ...] = (
             ),
             TabSpec(
                 key="details",
-                label="Details",
+                label=pgettext("tab-greyliterature", "Details"),
                 sections=(
                     FieldsSection(
                         (
-                            ("document_code_a", "Document code A"),
-                            ("document_code_b", "Document code B"),
-                            ("document_status", "Document Status"),
+                            ("document_code_a", _("Document code A")),
+                            ("document_code_b", _("Document code B")),
+                            ("document_status", _("Document Status")),
                         )
                     ),
                 ),
             ),
             TabSpec(
                 key="notes",
-                label="Notes",
+                label=pgettext("tab-greyliterature", "Notes"),
                 sections=(TextSection("notes", None),),
             ),
         ),
@@ -490,8 +492,8 @@ ITEM_TYPES: tuple[ItemType, ...] = (
     ),
     ItemType(
         key="photograph",
-        label="Photograph Collection",
-        label_plural="Photograph Collections",
+        label=pgettext("item-type", "Photograph Collection"),
+        label_plural=pgettext("item-type", "Photograph Collections"),
         table="photograph_collection",
         title="title",
         identifier="id",
@@ -502,13 +504,13 @@ ITEM_TYPES: tuple[ItemType, ...] = (
         tabs=(
             TabSpec(
                 key="main",
-                label="Main",
+                label=pgettext("tab-photograph", "Main"),
                 sections=(
                     TextSection("about", "About"),
                     FieldsSection(
                         (
-                            ("id", "ID"),
-                            ("location", "Location"),
+                            ("id", _("ID")),
+                            ("location", _("Location")),
                             # Photograph count (computed field)
                         )
                     ),
@@ -516,12 +518,12 @@ ITEM_TYPES: tuple[ItemType, ...] = (
             ),
             TabSpec(
                 key="details",
-                label="Details",
-                sections=(FieldsSection((("accession_number", "Accession Number"),)),),
+                label=pgettext("tab-photograph", "Details"),
+                sections=(FieldsSection((("accession_number", _("Accession Number")),)),),
             ),
             TabSpec(
                 key="notes",
-                label="Notes",
+                label=pgettext("tab-photograph", "Notes"),
                 sections=(TextSection("notes", None),),
             ),
         ),
