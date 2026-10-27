@@ -1,5 +1,7 @@
 # biblioteq-web
 
+[![Crowdin](https://badges.crowdin.net/biblioteq-web/localized.svg)](https://crowdin.com/project/biblioteq-web)
+
 A read-only web browser for [BiblioteQ](https://github.com/textbrowser/biblioteq) library collections.
 
 It connects to an existing BiblioteQ database, either PostgreSQL (using a dedicated read-only role) or
@@ -86,7 +88,7 @@ BIBLIOTEQ_TEST_DB_URL=postgresql+psycopg://user:pw@localhost/scratch_db .venv/bi
 The integration tests drop and recreate the `public` schema of `BIBLIOTEQ_TEST_DB_URL`; use a disposable
 database. Without that variable they are skipped.
 
-For supported languages and catalog details, see [Localization and Internationalization](docs/localization.md).
+Translations are coordinated through [Crowdin](https://crowdin.com/project/biblioteq-web). To contribute, see [Localization and Internationalization](docs/localization.md).
 
 Architecture documentation is in [docs/arch/](docs/arch/).
 

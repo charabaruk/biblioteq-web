@@ -2,6 +2,8 @@
 
 The interface uses gettext catalogs. English source strings and their translation contexts are defined in `app/item_types.py` and the Jinja templates. `babel.cfg` configures Babel to extract strings from both Python and templates.
 
+Translations are coordinated through the [BiblioteQ Web Crowdin project](https://crowdin.com/project/biblioteq-web). Use Crowdin to contribute translations. The Babel workflow below covers extracting updated source strings and compiling gettext catalogs for the application.
+
 ## Language Selection
 
 The supported language names and codes are listed in `LANGUAGES` in `app/locale.py`. English (`en`) is the source-text fallback. The configured default is always available, even without a compiled catalog; other non-default languages are offered when their compiled catalog is available at:
