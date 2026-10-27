@@ -6,7 +6,7 @@ This checklist follows the version goals in the [roadmap](roadmap.md). Items lis
 
 - [x] **Music CD track listings:** Show tracks ordered by disc and track number.
 - [x] **Square Music CD browse images:** Use square images for Music CDs on browse pages while retaining the current aspect ratio for other item types.
-- [ ] **Natural title sorting:** Sort titles naturally in browse and other title-ordered results, so, for example, `Volume 2` precedes `Volume 10`.
+- [x] **Natural title sorting:** Sort titles naturally in browse and other title-ordered results, so, for example, `Volume 2` precedes `Volume 10`.
 
 ## v0.3: Localization and Holdings Information
 

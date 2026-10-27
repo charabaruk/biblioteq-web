@@ -47,6 +47,8 @@ All settings are environment variables; see [.env.example](.env.example).
 | `BIBLIOTEQ_DB_URL` | required | `postgresql+psycopg://user:pw@host/db` or `sqlite:////absolute/path/biblioteq.sqlite` |
 | `BIBLIOTEQ_DB_SCHEMA` | `public` | PostgreSQL only: schema containing the BiblioteQ tables |
 | `BIBLIOTEQ_PAGE_SIZE` | `24` | Results per page (max 100) |
+| `BIBLIOTEQ_NATURAL_SORT` | `true` | Sort titles naturally (`Volume 2` before `Volume 10`); `false` uses plain SQL ordering |
+| `BIBLIOTEQ_NATURAL_SORT_NUMBERS` | `integer` | `integer` or `decimal`: how digit runs in titles are compared |
 | `BIBLIOTEQ_DB_POOL_SIZE` / `BIBLIOTEQ_DB_MAX_OVERFLOW` | `5` / `5` | Connection pool per worker |
 | `BIBLIOTEQ_DB_STATEMENT_TIMEOUT_MS` | `5000` | PostgreSQL statement timeout; SQLite busy timeout |
 | `BIBLIOTEQ_SITE_TITLE` | `Library Collection` | Title shown in the UI |
