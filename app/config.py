@@ -25,6 +25,7 @@ class Settings:
     root_path: str = ""
     natural_sort: bool = True
     natural_sort_numbers: str = "integer"  # "integer" or "decimal"
+    default_lang: str = "en"
 
     @property
     def title_sort(self) -> str | None:

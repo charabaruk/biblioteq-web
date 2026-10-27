@@ -8,6 +8,7 @@ from fastapi.staticfiles import StaticFiles
 from starlette.exceptions import HTTPException
 
 from app.config import get_settings
+from app.locale import LanguageMiddleware
 from app.routes import covers, health, pages
 from app.templating import BASE_DIR, templates
 
@@ -28,6 +29,7 @@ def create_app() -> FastAPI:
     app.include_router(health.router)
     app.include_router(pages.router)
     app.include_router(covers.router)
+    app.add_middleware(LanguageMiddleware, templates=templates)
 
     @app.exception_handler(HTTPException)
     async def http_error(request: Request, exc: HTTPException) -> HTMLResponse:

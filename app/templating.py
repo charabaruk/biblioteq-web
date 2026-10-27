@@ -18,6 +18,7 @@ def _context(request: Request) -> dict:
 
 
 templates = Jinja2Templates(directory=BASE_DIR / "app" / "templates", context_processors=[_context])
+templates.env.add_extension("jinja2.ext.i18n")
 
 
 def tab_templates(spec_key: str, tab) -> list[str]:
