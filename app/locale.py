@@ -48,7 +48,7 @@ class LanguageMiddleware(BaseHTTPMiddleware):
         self.templates.env.globals["gettext"] = translations.gettext
         self.templates.env.globals["ngettext"] = translations.ngettext
         # optional: store on request.state for Python code
-        request.state.lang = lang
+        request.state.lang = translations.info().get("language", DEFAULT_LANG)
         request.state.translations = translations
 
         response = await call_next(request)

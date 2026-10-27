@@ -14,6 +14,7 @@ def _context(request: Request) -> dict:
     return {
         "site_title": get_settings().site_title,
         "base": request.scope.get("root_path", ""),
+        "lang": getattr(request.state, "lang", get_settings().default_lang),
     }
 
 
