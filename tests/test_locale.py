@@ -58,9 +58,7 @@ def test_get_translations_uses_source_text_when_catalog_is_missing(monkeypatch, 
     assert translations.pgettext("item-type", "Book") == "Book"
 
 
-def test_language_selection_persists_cookie_and_translates_page(
-    configured, monkeypatch, tmp_path
-):
+def test_language_selection_persists_cookie_and_translates_page(configured, monkeypatch, tmp_path):
     _install_languages(monkeypatch, tmp_path)
 
     class FrenchTranslations(NullTranslations):
@@ -101,8 +99,6 @@ def test_language_selection_rejects_unsupported_and_external_redirects(
         unsupported = client.get("/language", params={"lang": "es"})
         assert unsupported.status_code == 400
 
-        external = client.get(
-            "/language", params={"lang": "fr", "next": "//example.com/"}
-        )
+        external = client.get("/language", params={"lang": "fr", "next": "//example.com/"})
         assert external.status_code == 303
         assert external.headers["location"] == "/"
