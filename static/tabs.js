@@ -25,7 +25,9 @@
         delete panel.dataset.src;
       })
       .catch(function () {
-        body.textContent = "This section could not be loaded.";
+        // Should have a localized error message in data-error-cannot-load but keep English fallback
+        var msg = panel.dataset.errorCannotLoad || "This section could not be loaded.";
+        body.textContent = msg;
       })
       .then(function () {
         delete panel.dataset.loading;

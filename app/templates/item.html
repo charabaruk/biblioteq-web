@@ -32,7 +32,7 @@
     <section id="tab-{{ tab.key }}" class="tab-panel"
       {%- if tab.sections is none %} data-src="{{ base }}/item/{{ spec.key }}/{{ item.id }}/{{ tab.key }}"{% endif %}>
       {% if multi %}<h2 class="tab-title">{{ tab.label }}</h2>{% endif %}
-      <div class="tab-body">
+      <div class="tab-body" data-error-cannot-load="{{ _('This section could not be loaded.') }}">
         {% if tab.sections is none %}
         <p><a href="{{ base }}/item/{{ spec.key }}/{{ item.id }}/{{ tab.key }}">{% trans label=tab.label %}Show {{ label }}{% endtrans %}</a></p>
         {% else %}{% include "item/_body.html" %}{% endif %}

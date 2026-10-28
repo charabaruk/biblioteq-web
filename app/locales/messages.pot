@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: biblioteq-web 0.2.0\n"
 "Report-Msgid-Bugs-To: https://github.com/charabaruk/biblioteq-web/issues\n"
-"POT-Creation-Date: 2026-10-28 09:54-0400\n"
+"POT-Creation-Date: 2026-10-28 09:57-0400\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -576,6 +576,10 @@ msgstr[1] ""
 #: app/templates/item.html:27
 msgctxt "aria-label"
 msgid "Item sections"
+msgstr ""
+
+#: app/templates/item.html:35
+msgid "This section could not be loaded."
 msgstr ""
 
 #: app/templates/item.html:37
