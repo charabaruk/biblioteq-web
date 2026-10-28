@@ -23,7 +23,8 @@ python3 -m venv .venv && .venv/bin/pip install -r requirements-dev.txt
 - Useful fixtures (`tests/conftest.py`): `client` (default registry), `tabbed_client` and
   `tabbed_types` (book type with a lazy second tab backed by the test-only `book_note` table).
 - Before committing: `ruff check .`, `ruff format .` and `pytest`. The VS Code task
-  "Check (lint, format, test)" runs all three.
+  "Check (lint, format, test)" runs all three, plus "Lint templates" (`djlint --lint
+  app/templates`), whose findings appear in the Problems panel.
 - CI runs `pytest` with coverage. It does not run accessibility tests.
 
 ## Accessibility tests

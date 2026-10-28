@@ -39,6 +39,23 @@
       }
     },
     {
+      "label": "Lint templates",
+      "type": "shell",
+      "command": ".venv/bin/djlint --lint app/templates",
+      "problemMatcher": {
+        "owner": "djlint",
+        "fileLocation": ["relative", "${workspaceFolder}"],
+        "pattern": {
+          "regexp": "^(.+):(\\d+):(\\d+): (\\S+) (.*)$",
+          "file": 1,
+          "line": 2,
+          "column": 3,
+          "code": 4,
+          "message": 5
+        }
+      }
+    },
+    {
       "label": "Format",
       "type": "shell",
       "command": ".venv/bin/ruff format .",
@@ -54,7 +71,7 @@
     {
       "label": "Check (lint, format, test)",
       "dependsOrder": "sequence",
-      "dependsOn": ["Lint", "Format", "Test"],
+      "dependsOn": ["Lint", "Lint templates", "Format", "Test"],
       "group": { "kind": "build", "isDefault": true },
       "problemMatcher": []
     }
