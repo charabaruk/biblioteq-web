@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: biblioteq-web 0.2.0\n"
 "Report-Msgid-Bugs-To: https://github.com/charabaruk/biblioteq-web/issues\n"
-"POT-Creation-Date: 2026-10-27 14:13-0400\n"
+"POT-Creation-Date: 2026-10-28 09:54-0400\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -518,24 +518,29 @@ msgstr ""
 msgid "Title, author, ISBN, ISSN..."
 msgstr ""
 
-#: app/templates/index.html:9 app/templates/search.html:8
+#: app/templates/index.html:8 app/templates/search.html:7
+msgctxt "aria-label"
+msgid "Item type"
+msgstr ""
+
+#: app/templates/index.html:10 app/templates/search.html:9
 msgid "All types"
 msgstr ""
 
-#: app/templates/index.html:12 app/templates/search.html:11
+#: app/templates/index.html:13 app/templates/search.html:12
 msgctxt "button"
 msgid "Search"
 msgstr ""
 
-#: app/templates/index.html:17
+#: app/templates/index.html:18
 msgid "Recently added:"
 msgstr ""
 
-#: app/templates/index.html:17
+#: app/templates/index.html:18
 msgid "Browse all"
 msgstr ""
 
-#: app/templates/index.html:21
+#: app/templates/index.html:22
 msgid "No item types are available in the configured database."
 msgstr ""
 
@@ -583,12 +588,7 @@ msgstr ""
 msgid "Search: %(query)s"
 msgstr ""
 
-#: app/templates/search.html:7
-msgctxt "aria-label"
-msgid "Item type"
-msgstr ""
-
-#: app/templates/search.html:14
+#: app/templates/search.html:15
 #, python-format
 msgid "%(count)s result"
 msgid_plural "%(count)s results"
