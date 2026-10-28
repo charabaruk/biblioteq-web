@@ -4,7 +4,8 @@
 {% block content %}
 <form action="{{ base }}/search" method="get" class="search-form">
   <input type="search" name="q" value="{{ q }}" aria-label="{{ pgettext('aria-label', 'Search') }}">
-  <select name="type" aria-label="{{ pgettext('aria-label', 'Item type') }}">
+  <label for="search-type" class="hidden-label">{{ pgettext('aria-label', 'Item type') }}</label>
+  <select id="search-type" name="type">
     <option value="">{{ _('All types') }}</option>
     {% for t in types %}<option value="{{ t.key }}" {{ 'selected' if t.key == selected_type }}>{{ t.label }}</option>{% endfor %}
   </select>

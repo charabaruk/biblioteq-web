@@ -5,7 +5,8 @@
   <h1>{{ _('Search the collection') }}</h1>
   <form action="{{ base }}/search" method="get" class="search-form">
     <input type="search" name="q" placeholder="{{ _('Title, author, ISBN, ISSN...') }}" aria-label="{{ pgettext('aria-label', 'Search') }}" autofocus>
-    <select name="type" aria-label="Item type">
+    <label for="search-type" class="hidden-label">{{ pgettext('aria-label', 'Item type') }}</label>
+    <select id="search-type" name="type">
       <option value="">{{ _('All types') }}</option>
       {% for t in types %}<option value="{{ t.key }}">{{ t.label }}</option>{% endfor %}
     </select>
