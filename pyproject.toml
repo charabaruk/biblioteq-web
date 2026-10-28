@@ -20,3 +20,11 @@ extend-immutable-calls = ["fastapi.Depends", "fastapi.Query", "fastapi.Path"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["."]
+addopts = "-m 'not a11y'"
+markers = ["a11y: browser-based accessibility tests, run with -m a11y (see docs/testing.md)"]
+
+[tool.djlint]
+profile = "jinja"
+extensions = ["html", "jinja"]
+exclude = [".venv", "venv", "node_modules", "vendor"]
+ignore = "T001,T002,T003,H008,H009,H010,H011,H012,H014,H015,H020,H023,H024,H026,H029,H030,T032,H033"

@@ -54,14 +54,11 @@ def client(configured):
         yield c
 
 
-@pytest.fixture
-def tabbed_client(configured, monkeypatch):
-    """Client whose book type has a lazy second tab backed by the test-only book_note table."""
+@pytest.fixture(scope="session")
+def tabbed_types():
+    """Registry whose book type has a lazy second tab backed by the test-only book_note table."""
     from dataclasses import replace
 
-    from fastapi.testclient import TestClient
-
-    from app import repository
     from app.item_types import (
         ITEM_TYPES,
         FieldsSection,
@@ -69,7 +66,6 @@ def tabbed_client(configured, monkeypatch):
         TabSpec,
         TextSection,
     )
-    from app.main import app
 
     book = next(t for t in ITEM_TYPES if t.key == "book")
     notes = TableSection(
@@ -93,6 +89,16 @@ def tabbed_client(configured, monkeypatch):
             TabSpec("notes", "Notes", (notes,), lazy=True),
         ),
     )
-    monkeypatch.setattr(repository, "ITEM_TYPES", (tabbed,))
+    return (tabbed,)
+
+
+@pytest.fixture
+def tabbed_client(configured, monkeypatch, tabbed_types):
+    from fastapi.testclient import TestClient
+
+    from app import repository
+    from app.main import app
+
+    monkeypatch.setattr(repository, "ITEM_TYPES", tabbed_types)
     with TestClient(app) as c:
         yield c
