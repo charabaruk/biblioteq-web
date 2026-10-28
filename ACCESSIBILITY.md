@@ -205,7 +205,8 @@ Deliberately deferred. Recorded so that the gaps are visible rather than assumed
 ## Testing
 
 Automated tooling is not a gate yet. Verification is currently manual and descriptive; it is
-not a fixed matrix, and it is expected to change as tooling is tried.
+not a fixed matrix, and it is expected to change as tooling is tried. Opt-in local axe and
+Playwright tests exist; see [docs/testing.md](docs/testing.md).
 
 Before merging a change that touches templates, CSS or script, the author should:
 
