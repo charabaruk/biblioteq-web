@@ -25,7 +25,8 @@ python3 -m venv .venv && .venv/bin/pip install -r requirements-dev.txt
 - Before committing: `ruff check .`, `ruff format .` and `pytest`. The VS Code task
   "Check (lint, format, test)" runs all three, plus "Lint templates" (`djlint --lint
   app/templates`), whose findings appear in the Problems panel.
-- CI runs `pytest` with coverage. It does not run accessibility tests.
+- CI runs `ruff`, `djlint --lint app/templates` and `pytest` with coverage. It does not run
+  accessibility tests.
 
 ## Accessibility tests
 
