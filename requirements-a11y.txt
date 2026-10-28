@@ -1,0 +1,5 @@
+-r requirements-dev.txt
+
+# Also run `playwright install chromium`
+playwright>=1.45
+axe-playwright-python>=0.1.4

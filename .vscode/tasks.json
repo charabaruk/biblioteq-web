@@ -4,7 +4,7 @@
     {
       "label": "Install dependencies",
       "type": "shell",
-      "command": "python3 -m venv .venv && .venv/bin/pip install -r requirements.txt",
+      "command": "python3 -m venv .venv && .venv/bin/pip install -r requirements-dev.txt",
       "problemMatcher": []
     },
     {

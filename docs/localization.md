@@ -28,7 +28,7 @@ To add a language, add its locale code and native display name to `LANGUAGES` in
 Babel is included in the development requirements. Install or refresh the project environment with:
 
 ```sh
-.venv/bin/pip install -r requirements.txt
+.venv/bin/pip install -r requirements-dev.txt
 ```
 
 After changing translatable strings, regenerate the template. The project version should match `pyproject.toml`:
