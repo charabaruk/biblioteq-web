@@ -69,6 +69,13 @@
       "problemMatcher": []
     },
     {
+      "label": "Accessibility Test",
+      "type": "shell",
+      "command": ".venv/bin/pytest -m a11y",
+      "group": "test",
+      "problemMatcher": []
+    },
+    {
       "label": "Check (lint, format, test)",
       "dependsOrder": "sequence",
       "dependsOn": ["Lint", "Lint templates", "Format", "Test"],
