@@ -1,5 +1,5 @@
 <section class="rows">
-  <h3>{{ section.label }}</h3>
+  {%if section.label %}<h3>{{ section.label }}</h3>{% endif %}
   {% for heading, rows in section.groups %}
   {% if heading %}<h4>{{ heading }}</h4>{% endif %}
   <table>

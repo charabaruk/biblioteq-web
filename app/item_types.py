@@ -71,7 +71,7 @@ class TextSection:
 class TableSection:
     """Rows of a related table whose `fk` column holds the item's primary key."""
 
-    label: DisplayText
+    label: DisplayText | None
     table: str
     fk: str
     columns: tuple[tuple[str, DisplayText], ...]  # (column, header)
