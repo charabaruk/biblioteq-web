@@ -20,6 +20,31 @@ CREATE TABLE magazine (
   display_number INTEGER, issueno INTEGER NOT NULL DEFAULT 0,
   issuevolume INTEGER NOT NULL DEFAULT 0
 );
+CREATE TABLE book_copy_info (
+  condition TEXT, copy_number INTEGER NOT NULL DEFAULT 1, copyid TEXT NOT NULL,
+  item_oid INTEGER NOT NULL, myoid INTEGER UNIQUE, notes TEXT, originality TEXT,
+  status TEXT, PRIMARY KEY (copyid, item_oid)
+);
+CREATE TABLE cd_copy_info (
+  copy_number INTEGER NOT NULL DEFAULT 1, copyid TEXT NOT NULL, item_oid INTEGER NOT NULL,
+  myoid INTEGER UNIQUE, notes TEXT, status TEXT, PRIMARY KEY (copyid, item_oid)
+);
+CREATE TABLE dvd_copy_info (
+  copy_number INTEGER NOT NULL DEFAULT 1, copyid TEXT NOT NULL, item_oid INTEGER NOT NULL,
+  myoid INTEGER UNIQUE, notes TEXT, status TEXT, PRIMARY KEY (copyid, item_oid)
+);
+CREATE TABLE journal_copy_info (
+  copy_number INTEGER NOT NULL DEFAULT 1, copyid TEXT NOT NULL, item_oid INTEGER NOT NULL,
+  myoid INTEGER UNIQUE, notes TEXT, status TEXT, PRIMARY KEY (copyid, item_oid)
+);
+CREATE TABLE magazine_copy_info (
+  copy_number INTEGER NOT NULL DEFAULT 1, copyid TEXT NOT NULL, item_oid INTEGER NOT NULL,
+  myoid INTEGER UNIQUE, notes TEXT, status TEXT, PRIMARY KEY (copyid, item_oid)
+);
+CREATE TABLE videogame_copy_info (
+  copy_number INTEGER NOT NULL DEFAULT 1, copyid TEXT NOT NULL, item_oid INTEGER NOT NULL,
+  myoid INTEGER UNIQUE, notes TEXT, status TEXT, PRIMARY KEY (copyid, item_oid)
+);
 -- Test-only related table that exercises table sections.
 CREATE TABLE book_note (
   myoid INTEGER PRIMARY KEY AUTOINCREMENT, item_oid INTEGER NOT NULL,
@@ -42,6 +67,8 @@ INSERT INTO journal (myoid, title, display_number, issueno, issuevolume) VALUES
 INSERT INTO magazine (myoid, title, display_number, issueno, issuevolume) VALUES
  (1, 'Hidden Magazine Values', -1, 0, 0),
  (2, 'Visible Magazine Values', 42, 3, 2025);
+INSERT INTO book_copy_info (item_oid, copyid, status, condition, originality, notes)
+VALUES (1, 'barcode-1', 'UNKNOWN', ' UNKNOWN ', 'UNKNOWN', 'UNKNOWN');
 
 UPDATE book SET description = 'A comic <i>space</i> opera.' || char(10) || 'Second line.',
   keyword = 'comedy, towel'

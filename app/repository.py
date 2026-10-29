@@ -278,6 +278,16 @@ def _own_value(value: object | None) -> str:
     return "" if cleaned == "N/A" else cleaned
 
 
+def _table_value(section: TableSection, column: str, value: object | None) -> str:
+    if (
+        section.table.endswith("_copy_info")
+        and column in {"status", "condition", "originality"}
+        and value == "UNKNOWN"
+    ):
+        return ""
+    return _clean(value)
+
+
 def _own_values(conn: Connection, spec: ItemType, tab: TabSpec, item_id: int) -> dict[str, str]:
     """Values of every column the tab's own-table sections read, in one query."""
     names: list[str] = []
@@ -323,7 +333,7 @@ def _table_section(conn: Connection, section: TableSection, item_id: int) -> Sec
             heading = f"{section.group_label} {_clean(row[index[section.group_by]])}".strip()
         if not groups or groups[-1][0] != heading:
             groups.append((heading, []))
-        groups[-1][1].append([_clean(row[index[c]]) for c, _ in section.columns])
+        groups[-1][1].append([_table_value(section, c, row[index[c]]) for c, _ in section.columns])
     return Section("table", section.label, headers=[h for _, h in section.columns], groups=groups)
 
 
