@@ -77,12 +77,18 @@ def test_registry_never_references_marc_tags():
 
 def test_book_tab_columns_are_valid_and_unique():
     book = next(t for t in ITEM_TYPES if t.key == "book")
-    assert [t.key for t in book.tabs] == ["main", "details"]
+    assert [t.key for t in book.tabs] == ["main", "holdings", "details"]
     columns = [
         c
         for tab in book.tabs
         for s in tab.sections
-        for c in ([s.column] if isinstance(s, TextSection) else [c for c, _ in s.fields])
+        for c in (
+            [s.column]
+            if isinstance(s, TextSection)
+            else [c for c, _ in s.fields]
+            if isinstance(s, FieldsSection)
+            else []
+        )
     ]
     assert len(columns) == len(set(columns))
     for c in columns:
@@ -187,4 +193,6 @@ def test_resolve_drops_unusable_table_section_and_empty_tab(tables):
 
 def test_related_tables_lists_section_tables():
     assert list(related_tables(_with_notes())) == ["note"]
-    assert list(related_tables(next(t for t in ITEM_TYPES if t.key == "book"))) == []
+    assert list(related_tables(next(t for t in ITEM_TYPES if t.key == "book"))) == [
+        "book_copy_info"
+    ]

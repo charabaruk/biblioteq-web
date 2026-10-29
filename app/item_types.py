@@ -162,6 +162,25 @@ ITEM_TYPES: tuple[ItemType, ...] = (
                 ),
             ),
             TabSpec(
+                key="holdings",
+                label=pgettext("tab-book", "Holdings"),
+                sections=(
+                    TableSection(
+                        label=None,
+                        table="book_copy_info",
+                        fk="item_oid",
+                        columns=(
+                            ("copyid", _("Barcode")),
+                            ("originality", _("Originality")),
+                            ("condition", _("Condition")),
+                            ("status", _("Status")),
+                            ("notes", _("Notes")),
+                        ),
+                        order_by=("copy_number", "copyid"),
+                    ),
+                ),
+            ),
+            TabSpec(
                 key="details",
                 label=pgettext("tab-book", "Details"),
                 sections=(
@@ -220,6 +239,23 @@ ITEM_TYPES: tuple[ItemType, ...] = (
                             ("dvddirector", _("Director")),
                             ("dvdactor", _("Actors")),
                         )
+                    ),
+                ),
+            ),
+            TabSpec(
+                key="holdings",
+                label=pgettext("tab-dvd", "Holdings"),
+                sections=(
+                    TableSection(
+                        label=None,
+                        table="dvd_copy_info",
+                        fk="item_oid",
+                        columns=(
+                            ("copyid", _("Barcode")),
+                            ("status", _("Status")),
+                            ("notes", _("Notes")),
+                        ),
+                        order_by=("copy_number", "copyid"),
                     ),
                 ),
             ),
@@ -292,6 +328,23 @@ ITEM_TYPES: tuple[ItemType, ...] = (
                 ),
             ),
             TabSpec(
+                key="holdings",
+                label=pgettext("tab-cd", "Holdings"),
+                sections=(
+                    TableSection(
+                        label=None,
+                        table="cd_copy_info",
+                        fk="item_oid",
+                        columns=(
+                            ("copyid", _("Barcode")),
+                            ("status", _("Status")),
+                            ("notes", _("Notes")),
+                        ),
+                        order_by=("copy_number", "copyid"),
+                    ),
+                ),
+            ),
+            TabSpec(
                 key="details",
                 label=pgettext("tab-cd", "Details"),
                 sections=(
@@ -341,6 +394,23 @@ ITEM_TYPES: tuple[ItemType, ...] = (
                             ("location", _("Location")),
                             ("callnumber", _("Call Number")),
                         )
+                    ),
+                ),
+            ),
+            TabSpec(
+                key="holdings",
+                label=pgettext("tab-journal", "Holdings"),
+                sections=(
+                    TableSection(
+                        label=None,
+                        table="journal_copy_info",
+                        fk="item_oid",
+                        columns=(
+                            ("copyid", _("Barcode")),
+                            ("status", _("Status")),
+                            ("notes", _("Notes")),
+                        ),
+                        order_by=("copy_number", "copyid"),
                     ),
                 ),
             ),
@@ -400,6 +470,23 @@ ITEM_TYPES: tuple[ItemType, ...] = (
                 ),
             ),
             TabSpec(
+                key="holdings",
+                label=pgettext("tab-magazine", "Holdings"),
+                sections=(
+                    TableSection(
+                        label=None,
+                        table="magazine_copy_info",
+                        fk="item_oid",
+                        columns=(
+                            ("copyid", _("Barcode")),
+                            ("status", _("Status")),
+                            ("notes", _("Notes")),
+                        ),
+                        order_by=("copy_number", "copyid"),
+                    ),
+                ),
+            ),
+            TabSpec(
                 key="details",
                 label=pgettext("tab-magazine", "Details"),
                 sections=(
@@ -449,6 +536,23 @@ ITEM_TYPES: tuple[ItemType, ...] = (
                             ("language", _("Language")),
                             ("location", _("Location")),
                         )
+                    ),
+                ),
+            ),
+            TabSpec(
+                key="holdings",
+                label=pgettext("tab-videogame", "Holdings"),
+                sections=(
+                    TableSection(
+                        label=None,
+                        table="videogame_copy_info",
+                        fk="item_oid",
+                        columns=(
+                            ("copyid", _("Barcode")),
+                            ("status", _("Status")),
+                            ("notes", _("Notes")),
+                        ),
+                        order_by=("copy_number", "copyid"),
                     ),
                 ),
             ),
