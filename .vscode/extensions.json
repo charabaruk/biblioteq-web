@@ -3,6 +3,7 @@
     "ms-python.python",
     "ms-python.vscode-pylance",
     "charliermarsh.ruff",
-    "editorconfig.editorconfig"
+    "editorconfig.editorconfig",
+    "samuelcolvin.jinjahtml"
   ]
 }
