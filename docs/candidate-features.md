@@ -12,7 +12,7 @@ This checklist follows the version goals in the [roadmap](roadmap.md). Items lis
 
 - [ ] **Initial localization support:** Replace bare strings in templates with translatable strings and generate translation catalogs.
 - [ ] **Item copy info:** Show information about individual item copies under each item page.
-- [ ] **Locations:** Pages for item locations, and browsing items at them.
+- [x] **Locations:** Pages for item locations, and browsing items at them.
 
 ## v0.4: Related Catalog Records
 
