@@ -3,6 +3,8 @@
 import logging
 import re
 from dataclasses import dataclass, field
+from urllib.parse import quote as url_quote
+from urllib.parse import urlencode
 
 from natsort import natsort_keygen, ns
 from sqlalchemy import Connection, text
@@ -61,7 +63,7 @@ class Availability:
 class Section:
     kind: str  # "fields", "text" or "table"; selects the sections/ partial
     label: str
-    fields: list[tuple[str, str]] = field(default_factory=list)
+    fields: list[tuple[str, str, str | None]] = field(default_factory=list)  # label, value, URL
     text: str = ""
     headers: list[str] = field(default_factory=list)
     groups: list[tuple[str | None, list[list[str]]]] = field(default_factory=list)
@@ -359,6 +361,12 @@ def _own_value(value: object | None) -> str:
     return "" if cleaned == "N/A" else cleaned
 
 
+def _location_value(value: object | None) -> str:
+    # Kept as stored: locations compare exactly, so the link must carry the same string.
+    raw = "" if value is None else str(value)
+    return "" if raw == UNKNOWN_LOCATION or not raw.strip() else raw
+
+
 def _table_value(section: TableSection, column: str, value: object | None) -> str:
     if (
         section.table.endswith("_copy_info")
@@ -391,7 +399,10 @@ def _own_values(conn: Connection, spec: ItemType, tab: TabSpec, item_id: int) ->
     )
     if row is None:
         return {}
-    return {c: _own_value(row[f"c{i}"]) for i, c in enumerate(names)}
+    return {
+        c: (_location_value if c == spec.location else _own_value)(row[f"c{i}"])
+        for i, c in enumerate(names)
+    }
 
 
 def _table_section(conn: Connection, section: TableSection, item_id: int) -> Section | None:
@@ -418,7 +429,16 @@ def _table_section(conn: Connection, section: TableSection, item_id: int) -> Sec
     return Section("table", section.label, headers=[h for _, h in section.columns], groups=groups)
 
 
-def _load_sections(conn: Connection, spec: ItemType, tab: TabSpec, item_id: int) -> list[Section]:
+def _location_url(conn: Connection, catalog: Catalog, spec: ItemType, name: str) -> str:
+    # The location page only shows types registered for the name; others fall back to browse.
+    if location_registered(conn, catalog, spec, name):
+        return f"/location/{url_quote(name, safe='/')}"
+    return f"/browse/{spec.key}?{urlencode({'location': name})}"
+
+
+def _load_sections(
+    conn: Connection, catalog: Catalog, spec: ItemType, tab: TabSpec, item_id: int
+) -> list[Section]:
     values = _own_values(conn, spec, tab, item_id)
     sections: list[Section] = []
     for s in tab.sections:
@@ -430,7 +450,8 @@ def _load_sections(conn: Connection, spec: ItemType, tab: TabSpec, item_id: int)
                     continue
                 if column in {"issueno", "issuevolume"} and value == "0":
                     continue
-                pairs.append((label, value))
+                url = _location_url(conn, catalog, spec, value) if column == spec.location else None
+                pairs.append((label, value, url))
             if pairs:
                 sections.append(Section("fields", "", fields=pairs))
         elif isinstance(s, TextSection):
@@ -477,7 +498,7 @@ def get_item(
     )
     for tab in spec.tabs:
         loaded = not tab.lazy or tab.key == load
-        sections = _load_sections(conn, spec, tab, item_id) if loaded else None
+        sections = _load_sections(conn, catalog, spec, tab, item_id) if loaded else None
         if sections == [] and not tab.lazy:
             continue  # nothing to show for this item
         item.tabs.append(Tab(tab.key, tab.label, tab.template, sections))
@@ -487,7 +508,9 @@ def get_item(
     return item
 
 
-def get_tab(conn: Connection, spec: ItemType, item_id: int, tab_key: str) -> Tab | None:
+def get_tab(
+    conn: Connection, catalog: Catalog, spec: ItemType, item_id: int, tab_key: str
+) -> Tab | None:
     """One tab's content; None if the tab or the item does not exist."""
     tab = next((t for t in spec.tabs if t.key == tab_key), None)
     if tab is None:
@@ -497,7 +520,9 @@ def get_tab(conn: Connection, spec: ItemType, item_id: int, tab_key: str) -> Tab
     ).first()
     result = None
     if exists:
-        result = Tab(tab.key, tab.label, tab.template, _load_sections(conn, spec, tab, item_id))
+        result = Tab(
+            tab.key, tab.label, tab.template, _load_sections(conn, catalog, spec, tab, item_id)
+        )
     conn.rollback()
     return result
 

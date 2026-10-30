@@ -2,9 +2,10 @@ import sqlite3
 from pathlib import Path
 
 import pytest
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
 
 from app import repository
+from app.item_types import Message
 
 SCHEMA = Path(__file__).parent / "schema_sqlite.sql"
 
@@ -162,3 +163,46 @@ def test_lookups_are_empty_without_the_locations_table(make_conn):
         assert repository.location_options(conn, catalog) == []
         assert repository.location_types(conn, catalog, "Shelf A") == []
         assert not repository.location_registered(conn, catalog, book, "Shelf A")
+
+
+def _item(conn, catalog, title):
+    book = catalog.types["book"]
+    item_id = conn.execute(
+        text("SELECT myoid FROM book WHERE title = :t"), {"t": title}
+    ).scalar_one()
+    return repository.get_item(conn, catalog, book, item_id)
+
+
+def _location_field(item):
+    fields = [f for tab in item.tabs for s in tab.sections for f in s.fields]
+    found = next((f for f in fields if f[0] == Message("Location")), None)
+    return found[1:] if found else None
+
+
+@pytest.mark.parametrize(
+    ("title", "expected"),
+    [
+        ("Shelf", ("Shelf A", "/location/Shelf%20A")),
+        ("Spaced", ("Shelf A ", "/browse/book?location=Shelf+A+")),
+        ("Orphan", ("Basement", "/browse/book?location=Basement")),
+        ("Manual", ("Unknown", "/browse/book?location=Unknown")),
+        ("Sentinel", None),
+        ("Nowhere", None),
+    ],
+)
+def test_item_location_is_exact_linked_and_hidden_when_unknown(registered, title, expected):
+    conn, catalog = registered
+    assert _location_field(_item(conn, catalog, title)) == expected
+
+
+def test_item_location_is_hidden_when_blank(make_conn):
+    with make_conn(BOOKS + "UPDATE book SET location = '  ' WHERE title = 'Nowhere';") as conn:
+        catalog = repository.load_catalog(conn, "public")
+        assert _location_field(_item(conn, catalog, "Nowhere")) is None
+
+
+def test_item_location_links_to_browse_without_the_locations_table(make_conn):
+    with make_conn(BOOKS + "DROP TABLE locations;") as conn:
+        catalog = repository.load_catalog(conn, "public")
+        field = _location_field(_item(conn, catalog, "Shelf"))
+        assert field[1] == "/browse/book?location=Shelf+A"

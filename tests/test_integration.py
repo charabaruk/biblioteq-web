@@ -195,3 +195,18 @@ def test_location_filter_survives_pagination(client, monkeypatch):
         assert "/browse/magazine?location=UNKNOWN&amp;page=2" in r.text
     finally:
         config.get_settings.cache_clear()
+
+
+def test_item_links_a_registered_location_to_its_page(client):
+    html = client.get("/item/book/1").text
+    assert '<dt>Location</dt><dd><a href="/location/Shelf%20A">Shelf A</a></dd>' in html
+
+
+def test_item_links_an_unregistered_location_to_the_browse_filter(client):
+    html = client.get("/item/book/2").text
+    assert '<a href="/browse/book?location=Orphan+Room">Orphan Room</a>' in html
+
+
+def test_item_hides_a_missing_or_unknown_location(client):
+    assert "Location" not in client.get("/item/book/3").text
+    assert "Location" not in client.get("/item/journal/2").text

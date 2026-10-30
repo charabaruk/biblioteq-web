@@ -212,7 +212,7 @@ def item_tab(
     if not any(t.key == tab_key for t in spec.tabs):
         raise HTTPException(status_code=404, detail="Unknown tab")
     if request.headers.get("x-requested-with") == "fetch":
-        tab = repository.get_tab(conn, spec, item_id, tab_key)
+        tab = repository.get_tab(conn, catalog, spec, item_id, tab_key)
         if tab is None:
             raise HTTPException(status_code=404, detail="Item not found")
         response = templates.TemplateResponse(
