@@ -50,6 +50,7 @@ button { background: var(--accent); color: #fff; border-color: var(--accent); cu
 
 h2 .more { font-size: 0.85rem; font-weight: normal; margin-left: 0.5rem; }
 .count { color: var(--muted); }
+.filter a { margin-left: 0.5rem; text-decoration: underline; }
 
 .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 1rem; }
 .card { display: block; background: var(--card); border: 1px solid var(--border); border-radius: 6px; overflow: hidden; color: inherit; }
