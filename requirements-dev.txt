@@ -4,5 +4,5 @@ babel>=2.18
 pytest>=8.0
 pytest-cov>=7.1.0
 httpx2>=2.0
-ruff>=0.17.2
+ruff>=0.17.3
 djlint>=1.47
