@@ -19,6 +19,7 @@ router = APIRouter()
 
 ItemId = Annotated[int, Path(ge=0, le=2**63 - 1)]
 PageNo = Annotated[int, Query(ge=1, le=100000)]
+LocationFilter = Annotated[str, Query(max_length=500)]
 HOME_RECENT = 6
 
 
@@ -108,6 +109,7 @@ def search(
     request: Request,
     q: Annotated[str, Query(max_length=200)] = "",
     type: Annotated[str, Query(max_length=40)] = "",
+    location: LocationFilter = "",
     page: PageNo = 1,
     conn: Connection = Depends(get_conn),
     catalog: Catalog = Depends(get_localized_catalog),
@@ -115,9 +117,18 @@ def search(
     selected = [type] if type in catalog.types else []
     settings = get_settings()
     result = repository.search(
-        conn, catalog, q, selected, page, settings.page_size, settings.title_sort
+        conn,
+        catalog,
+        q,
+        selected,
+        page,
+        settings.page_size,
+        settings.title_sort,
+        location or None,
     )
-    pager = "/search?" + urlencode({"q": q, "type": type})
+    pager = "/search?" + urlencode(
+        {"q": q, "type": type, **({"location": location} if location else {})}
+    )
     return templates.TemplateResponse(
         request,
         "search.html",
@@ -125,6 +136,8 @@ def search(
             "types": catalog.types.values(),
             "q": q,
             "selected_type": type,
+            "location": location,
+            "locations": repository.location_options(conn, catalog),
             "result": result,
             "pager": pager,
             "type_labels": {k: v.label for k, v in catalog.types.items()},
@@ -136,6 +149,7 @@ def search(
 def browse(
     request: Request,
     type_key: str,
+    location: LocationFilter = "",
     page: PageNo = 1,
     conn: Connection = Depends(get_conn),
     catalog: Catalog = Depends(get_localized_catalog),
@@ -143,7 +157,14 @@ def browse(
     spec = require_type(type_key, catalog)
     settings = get_settings()
     result = repository.search(
-        conn, catalog, "", [spec.key], page, settings.page_size, settings.title_sort
+        conn,
+        catalog,
+        "",
+        [spec.key],
+        page,
+        settings.page_size,
+        settings.title_sort,
+        location or None,
     )
     return templates.TemplateResponse(
         request,
@@ -151,8 +172,10 @@ def browse(
         {
             "types": catalog.types.values(),
             "spec": spec,
+            "location": location,
             "result": result,
-            "pager": f"/browse/{spec.key}?",
+            "pager": f"/browse/{spec.key}?"
+            + (urlencode({"location": location}) if location else ""),
             "type_labels": {k: v.label for k, v in catalog.types.items()},
         },
     )

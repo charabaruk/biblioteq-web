@@ -15,6 +15,8 @@ PAGES = {
     "search-results": "/search?q=dune",
     "search-no-results": "/search?q=zzzznothing",
     "browse": "/browse/book",
+    "browse-location": "/browse/book?location=Orphan%20Room",
+    "search-location": "/search?location=Orphan%20Room",
     "location": "/location/Shelf%20A",
     "location-unknown": "/location/UNKNOWN",
     "location-empty": "/location/Reading%20Room",

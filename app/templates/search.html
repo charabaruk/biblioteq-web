@@ -9,6 +9,13 @@
     <option value="">{{ _('All types') }}</option>
     {% for t in types %}<option value="{{ t.key }}" {{ 'selected' if t.key == selected_type }}>{{ t.label }}</option>{% endfor %}
   </select>
+  <label for="search-location" class="hidden-label">{{ pgettext('aria-label', 'Location') }}</label>
+  <select id="search-location" name="location">
+    <option value="">{{ _('All locations') }}</option>
+    <option value="UNKNOWN" {{ 'selected' if location == 'UNKNOWN' }}>{{ _('Unknown') }}</option>
+    {% for name in locations %}<option value="{{ name }}" {{ 'selected' if name == location }}>{{ name }}</option>{% endfor %}
+    {% if location and location != 'UNKNOWN' and location not in locations %}<option value="{{ location }}" selected>{{ location }}</option>{% endif %}
+  </select>
   <button type="submit">{{ pgettext('button', 'Search') }}</button>
 </form>
 <p class="count">
