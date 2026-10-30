@@ -32,6 +32,18 @@ def test_registry_keeps_prose_out_of_detail_fields():
         assert not {c for c, _ in spec.detail_fields} & {c for c, _ in spec.text_fields}
 
 
+def test_every_type_has_a_location_and_a_distinct_locations_type():
+    assert all(spec.location == "location" for spec in ITEM_TYPES)
+    types = [spec.location_type for spec in ITEM_TYPES]
+    assert all(types) and len(set(types)) == len(types)
+
+
+def test_resolve_drops_a_missing_location_column():
+    book = next(spec for spec in ITEM_TYPES if spec.key == "book")
+    assert resolve(book, {"myoid", "title", "location"}).location == "location"
+    assert resolve(book, {"myoid", "title"}).location is None
+
+
 def test_localize_labels_translates_nested_values_without_mutating_registry():
     class FrenchTranslations(NullTranslations):
         def gettext(self, message):

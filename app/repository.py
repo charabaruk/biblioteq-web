@@ -3,6 +3,8 @@
 import logging
 import re
 from dataclasses import dataclass, field
+from urllib.parse import quote as url_quote
+from urllib.parse import urlencode
 
 from natsort import natsort_keygen, ns
 from sqlalchemy import Connection, text
@@ -23,12 +25,14 @@ log = logging.getLogger(__name__)
 
 MAX_TERMS = 8
 MAX_QUERY_LENGTH = 200
+UNKNOWN_LOCATION = "UNKNOWN"  # BiblioteQ's stand-in for no location
 
 
 @dataclass(frozen=True)
 class Catalog:
     types: dict[str, ItemType]
     has_borrowers: bool
+    has_locations: bool = False
 
 
 @dataclass(frozen=True)
@@ -59,7 +63,7 @@ class Availability:
 class Section:
     kind: str  # "fields", "text" or "table"; selects the sections/ partial
     label: str
-    fields: list[tuple[str, str]] = field(default_factory=list)
+    fields: list[tuple[str, str, str | None]] = field(default_factory=list)  # label, value, URL
     text: str = ""
     headers: list[str] = field(default_factory=list)
     groups: list[tuple[str | None, list[list[str]]]] = field(default_factory=list)
@@ -91,7 +95,7 @@ def _columns_by_table(conn: Connection, schema: str) -> dict[str, set[str]]:
         for table in (
             [s.table for s in ITEM_TYPES]
             + [t for s in ITEM_TYPES for t in related_tables(s)]
-            + ["item_borrower"]
+            + ["item_borrower", "locations"]
         ):
             names = conn.execute(
                 text("SELECT name FROM pragma_table_info(:table)"), {"table": table}
@@ -125,7 +129,11 @@ def load_catalog(conn: Connection, schema: str) -> Catalog:
             continue
         types[spec.key] = resolved
     conn.rollback()
-    return Catalog(types=types, has_borrowers="item_borrower" in columns)
+    return Catalog(
+        types=types,
+        has_borrowers="item_borrower" in columns,
+        has_locations={"location", "type"} <= columns.get("locations", set()),
+    )
 
 
 def _like_pattern(term: str) -> str:
@@ -148,31 +156,41 @@ def _flag(column: str | None) -> str:
     return f"CASE WHEN {quote(column)} IS NOT NULL THEN 1 ELSE 0 END"
 
 
-def _where_sql(spec: ItemType, n_terms: int) -> str:
-    if not n_terms:
-        return ""
+def _location_clause(spec: ItemType, location: str) -> str:
+    # A type without a location column cannot match any location.
+    if not spec.location:
+        return "0 = 1"
+    column = quote(spec.location)
+    if location == UNKNOWN_LOCATION:
+        return f"({column} IS NULL OR {column} = :loc)"
+    return f"{column} = :loc"
+
+
+def _where_sql(spec: ItemType, n_terms: int, location: str | None = None) -> str:
     # Every term must match at least one searchable column.
     cols = spec.search_columns or (spec.title,)
     clauses = [
         "(" + " OR ".join(f"lower({_text(c)}) LIKE lower(:t{i}) ESCAPE '\\'" for c in cols) + ")"
         for i in range(n_terms)
     ]
-    return " WHERE " + " AND ".join(clauses)
+    if location is not None:
+        clauses.append(_location_clause(spec, location))
+    return " WHERE " + " AND ".join(clauses) if clauses else ""
 
 
-def _select_sql(spec: ItemType, n_terms: int) -> str:
+def _select_sql(spec: ItemType, n_terms: int, location: str | None = None) -> str:
     return (
         f"SELECT '{spec.key}' AS type, {quote(spec.pk)} AS id, {_text(spec.title)} AS title, "
         f"{_text(spec.creator)} AS creator, {_text(spec.identifier)} AS identifier, "
         f"{_flag(spec.front_cover)} AS has_cover "
-        f"FROM {quote(spec.table)}" + _where_sql(spec, n_terms)
+        f"FROM {quote(spec.table)}" + _where_sql(spec, n_terms, location)
     )
 
 
-def _keys_sql(spec: ItemType, n_terms: int) -> str:
+def _keys_sql(spec: ItemType, n_terms: int, location: str | None = None) -> str:
     return (
         f"SELECT '{spec.key}' AS type, {quote(spec.pk)} AS id, {_text(spec.title)} AS title "
-        f"FROM {quote(spec.table)}" + _where_sql(spec, n_terms)
+        f"FROM {quote(spec.table)}" + _where_sql(spec, n_terms, location)
     )
 
 
@@ -190,9 +208,10 @@ def _natural_page(
     page: int,
     page_size: int,
     numbers: str,
+    location: str | None = None,
 ) -> Page:
     # Sorting happens here because the database has no portable natural collation.
-    union = " UNION ALL ".join(_keys_sql(s, len(terms)) for s in specs)
+    union = " UNION ALL ".join(_keys_sql(s, len(terms), location) for s in specs)
     key = title_sort_key(numbers)
     keys = sorted(
         conn.execute(text(union), params).all(),
@@ -227,11 +246,13 @@ def search(
     page: int,
     page_size: int,
     natural: str | None = None,
+    location: str | None = None,
 ) -> Page:
     """Search the given types (all available if empty). An empty query lists everything.
 
     `natural` is "integer" or "decimal" to order titles naturally in Python;
-    None orders in SQL by lowercased title.
+    None orders in SQL by lowercased title. `location` keeps items at exactly that
+    location; "UNKNOWN" also keeps items with none.
     """
     specs = [catalog.types[k] for k in type_keys if k in catalog.types] or list(
         catalog.types.values()
@@ -240,9 +261,11 @@ def search(
         return Page([], 0, 1, page_size)
     terms = parse_terms(query)
     params: dict[str, object] = {f"t{i}": _like_pattern(t) for i, t in enumerate(terms)}
+    if location is not None:
+        params["loc"] = location
     if natural:
-        return _natural_page(conn, specs, terms, params, page, page_size, natural)
-    union = " UNION ALL ".join(_select_sql(s, len(terms)) for s in specs)
+        return _natural_page(conn, specs, terms, params, page, page_size, natural, location)
+    union = " UNION ALL ".join(_select_sql(s, len(terms), location) for s in specs)
 
     total = conn.execute(text(f"SELECT count(*) FROM ({union}) u"), params).scalar_one()
     page = max(1, min(page, max(1, -(-total // page_size))))
@@ -257,15 +280,75 @@ def search(
     return Page(items, total, page, page_size)
 
 
-def recent(conn: Connection, spec: ItemType, limit: int) -> list[dict]:
+def recent(conn: Connection, spec: ItemType, limit: int, location: str | None = None) -> list[dict]:
     """Most recently added rows of one type (highest primary key first)."""
+    params: dict[str, object] = {"limit": limit}
+    if location is not None:
+        params["loc"] = location
     rows = conn.execute(
-        text(f"{_select_sql(spec, 0)} ORDER BY {quote(spec.pk)} DESC LIMIT :limit"),
-        {"limit": limit},
+        text(f"{_select_sql(spec, 0, location)} ORDER BY {quote(spec.pk)} DESC LIMIT :limit"),
+        params,
     ).mappings()
     items = [dict(r) for r in rows]
     conn.rollback()
     return items
+
+
+def _registered_specs(catalog: Catalog) -> list[ItemType]:
+    return [s for s in catalog.types.values() if s.location and s.location_type]
+
+
+def location_options(conn: Connection, catalog: Catalog) -> list[str]:
+    """Distinct locations registered for any type the catalog serves, for the filter list."""
+    specs = _registered_specs(catalog)
+    if not catalog.has_locations or not specs:
+        return []
+    marks = ", ".join(f":t{n}" for n in range(len(specs)))
+    names = conn.execute(
+        text(f"SELECT DISTINCT location FROM locations WHERE type IN ({marks})"),
+        {f"t{n}": s.location_type for n, s in enumerate(specs)},
+    ).scalars()
+    options = list(names)
+    conn.rollback()
+    return sorted(options, key=lambda name: (name.casefold(), name))
+
+
+def location_types(conn: Connection, catalog: Catalog, name: str) -> list[ItemType]:
+    """Catalog types registered for exactly this location, in registry order."""
+    if not catalog.has_locations:
+        return []
+    registered = set(
+        conn.execute(
+            text("SELECT type FROM locations WHERE location = :name"), {"name": name}
+        ).scalars()
+    )
+    conn.rollback()
+    return [s for s in _registered_specs(catalog) if s.location_type in registered]
+
+
+def location_registered(conn: Connection, catalog: Catalog, spec: ItemType, name: str) -> bool:
+    """Whether `locations` lists exactly this name for the item's own type."""
+    if not catalog.has_locations or not spec.location_type:
+        return False
+    found = conn.execute(
+        text("SELECT 1 FROM locations WHERE location = :name AND type = :type"),
+        {"name": name, "type": spec.location_type},
+    ).first()
+    conn.rollback()
+    return found is not None
+
+
+def types_without_location(conn: Connection, catalog: Catalog) -> list[ItemType]:
+    """Catalog types with at least one item that has no location (NULL or UNKNOWN)."""
+    found = []
+    for spec in catalog.types.values():
+        if not spec.location:
+            continue
+        sql = f"SELECT 1 FROM {quote(spec.table)} WHERE {_location_clause(spec, UNKNOWN_LOCATION)}"
+        if conn.execute(text(sql + " LIMIT 1"), {"loc": UNKNOWN_LOCATION}).first():
+            found.append(spec)
+    conn.rollback()
+    return found
 
 
 def _clean(value: object | None) -> str:
@@ -276,6 +359,12 @@ def _own_value(value: object | None) -> str:
     # "N/A" is a placeholder in BiblioteQ data, not content.
     cleaned = _clean(value)
     return "" if cleaned == "N/A" else cleaned
+
+
+def _location_value(value: object | None) -> str:
+    # Kept as stored: locations compare exactly, so the link must carry the same string.
+    raw = "" if value is None else str(value)
+    return "" if raw == UNKNOWN_LOCATION or not raw.strip() else raw
 
 
 def _table_value(section: TableSection, column: str, value: object | None) -> str:
@@ -310,7 +399,10 @@ def _own_values(conn: Connection, spec: ItemType, tab: TabSpec, item_id: int) ->
     )
     if row is None:
         return {}
-    return {c: _own_value(row[f"c{i}"]) for i, c in enumerate(names)}
+    return {
+        c: (_location_value if c == spec.location else _own_value)(row[f"c{i}"])
+        for i, c in enumerate(names)
+    }
 
 
 def _table_section(conn: Connection, section: TableSection, item_id: int) -> Section | None:
@@ -337,7 +429,16 @@ def _table_section(conn: Connection, section: TableSection, item_id: int) -> Sec
     return Section("table", section.label, headers=[h for _, h in section.columns], groups=groups)
 
 
-def _load_sections(conn: Connection, spec: ItemType, tab: TabSpec, item_id: int) -> list[Section]:
+def _location_url(conn: Connection, catalog: Catalog, spec: ItemType, name: str) -> str:
+    # The location page only shows types registered for the name; others fall back to browse.
+    if location_registered(conn, catalog, spec, name):
+        return f"/location/{url_quote(name, safe='/')}"
+    return f"/browse/{spec.key}?{urlencode({'location': name})}"
+
+
+def _load_sections(
+    conn: Connection, catalog: Catalog, spec: ItemType, tab: TabSpec, item_id: int
+) -> list[Section]:
     values = _own_values(conn, spec, tab, item_id)
     sections: list[Section] = []
     for s in tab.sections:
@@ -349,7 +450,8 @@ def _load_sections(conn: Connection, spec: ItemType, tab: TabSpec, item_id: int)
                     continue
                 if column in {"issueno", "issuevolume"} and value == "0":
                     continue
-                pairs.append((label, value))
+                url = _location_url(conn, catalog, spec, value) if column == spec.location else None
+                pairs.append((label, value, url))
             if pairs:
                 sections.append(Section("fields", "", fields=pairs))
         elif isinstance(s, TextSection):
@@ -396,7 +498,7 @@ def get_item(
     )
     for tab in spec.tabs:
         loaded = not tab.lazy or tab.key == load
-        sections = _load_sections(conn, spec, tab, item_id) if loaded else None
+        sections = _load_sections(conn, catalog, spec, tab, item_id) if loaded else None
         if sections == [] and not tab.lazy:
             continue  # nothing to show for this item
         item.tabs.append(Tab(tab.key, tab.label, tab.template, sections))
@@ -406,7 +508,9 @@ def get_item(
     return item
 
 
-def get_tab(conn: Connection, spec: ItemType, item_id: int, tab_key: str) -> Tab | None:
+def get_tab(
+    conn: Connection, catalog: Catalog, spec: ItemType, item_id: int, tab_key: str
+) -> Tab | None:
     """One tab's content; None if the tab or the item does not exist."""
     tab = next((t for t in spec.tabs if t.key == tab_key), None)
     if tab is None:
@@ -416,7 +520,9 @@ def get_tab(conn: Connection, spec: ItemType, item_id: int, tab_key: str) -> Tab
     ).first()
     result = None
     if exists:
-        result = Tab(tab.key, tab.label, tab.template, _load_sections(conn, spec, tab, item_id))
+        result = Tab(
+            tab.key, tab.label, tab.template, _load_sections(conn, catalog, spec, tab, item_id)
+        )
     conn.rollback()
     return result
 

@@ -13,6 +13,16 @@
 </a>
 {% endmacro %}
 
+{% macro recent_sections(sections, location=None) %}
+{% set query = '?location=' ~ (location | urlencode) if location is not none else '' %}
+{% for spec, items in sections %}
+<section>
+  <h2>{{ _('Recently added:') }} {{ spec.label_plural }} <a class="more" href="{{ base }}/browse/{{ spec.key }}{{ query }}">{{ _('Browse all') }}</a></h2>
+  <div class="grid">{% for it in items %}{{ card(it, spec.label) }}{% endfor %}</div>
+</section>
+{% endfor %}
+{% endmacro %}
+
 {% macro pagination(result, pager) %}
 {% if result.pages > 1 %}
 {% set sep = '' if pager.endswith('?') else '&' %}

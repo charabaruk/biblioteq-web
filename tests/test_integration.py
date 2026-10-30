@@ -104,3 +104,109 @@ def test_connection_is_read_only(configured):
             raise AssertionError("write unexpectedly succeeded")
         except DBAPIError:
             pass
+
+
+def test_location_page_lists_items_of_registered_types(client):
+    r = client.get("/location/Shelf A")
+    assert r.status_code == 200
+    assert "Location: Shelf A" in r.text
+    assert "Hitchhiker" in r.text and "Hidden Journal Values" in r.text
+    assert "Dune" not in r.text and "Visible Journal Values" not in r.text
+    assert "/browse/book?location=Shelf%20A" in r.text
+
+
+def test_location_names_are_exact(client):
+    off = {"follow_redirects": False}
+    assert client.get("/location/SHELF A", **off).status_code == 307
+    assert client.get("/location/Shelf A ", **off).status_code == 307
+    r = client.get("/location/shelf a", **off)
+    assert r.status_code == 200 and "No items at this location." in r.text
+
+
+def test_unregistered_location_redirects_to_the_landing_page(client):
+    for name in ("Orphan Room", "Nowhere", ""):
+        r = client.get(f"/location/{name}", follow_redirects=False)
+        assert (r.status_code, r.headers["location"]) == (307, "/")
+
+
+def test_registered_location_without_items_shows_an_empty_page(client):
+    r = client.get("/location/Reading Room")
+    assert r.status_code == 200 and "No items at this location." in r.text
+
+
+def test_location_names_may_contain_slashes(client):
+    assert "Location: Ghost/Annex" in client.get("/location/Ghost/Annex").text
+
+
+def test_unknown_location_page_lists_items_without_a_location(client):
+    r = client.get("/location/UNKNOWN")
+    assert r.status_code == 200 and "Unknown location" in r.text
+    assert "Wild_Cards" in r.text and "Visible Journal Values" in r.text
+    assert "Hidden Magazine Values" in r.text
+    assert "Hitchhiker" not in r.text and "Dune" not in r.text
+    assert "/browse/journal?location=UNKNOWN" in r.text
+
+
+def test_browse_filters_by_exact_location(client):
+    r = client.get("/browse/book", params={"location": "Orphan Room"})
+    assert "Dune" in r.text and "Hitchhiker" not in r.text
+    assert "Location: Orphan Room" in r.text and "Clear filter" in r.text
+    assert "1 item" in r.text
+    assert "0 items" in client.get("/browse/book", params={"location": "shelf A"}).text
+
+
+def test_browse_unknown_location_includes_items_without_one(client):
+    r = client.get("/browse/book", params={"location": "UNKNOWN"})
+    assert "Wild_Cards" in r.text and "Dune" not in r.text
+    assert "Unknown location" in r.text
+
+
+def test_search_filters_by_location_and_terms(client):
+    r = client.get("/search", params={"location": "Shelf A"})
+    assert "Hitchhiker" in r.text and "Hidden Journal Values" in r.text
+    assert "Dune" not in r.text
+    assert "0 results" in client.get("/search", params={"q": "dune", "location": "Shelf A"}).text
+    r = client.get("/search", params={"location": "UNKNOWN", "type": "journal"})
+    assert "Visible Journal Values" in r.text and "Hidden Journal Values" not in r.text
+
+
+def test_search_form_offers_registered_locations(client):
+    r = client.get("/search")
+    for name in ("Shelf A", "shelf a", "Reading Room", "Ghost/Annex"):
+        assert f'<option value="{name}"' in r.text
+    assert '<option value="UNKNOWN"' in r.text
+    assert "Orphan Room" not in r.text
+
+
+def test_search_form_keeps_an_unlisted_location_selected(client):
+    r = client.get("/search", params={"location": "Orphan Room"})
+    assert '<option value="Orphan Room" selected>' in r.text
+
+
+def test_location_filter_survives_pagination(client, monkeypatch):
+    monkeypatch.setenv("BIBLIOTEQ_PAGE_SIZE", "1")
+    from app import config
+
+    config.get_settings.cache_clear()
+    try:
+        r = client.get("/search", params={"location": "UNKNOWN"})
+        assert "location=UNKNOWN&amp;page=2" in r.text
+        r = client.get("/browse/magazine", params={"location": "UNKNOWN"})
+        assert "/browse/magazine?location=UNKNOWN&amp;page=2" in r.text
+    finally:
+        config.get_settings.cache_clear()
+
+
+def test_item_links_a_registered_location_to_its_page(client):
+    html = client.get("/item/book/1").text
+    assert '<dt>Location</dt><dd><a href="/location/Shelf%20A">Shelf A</a></dd>' in html
+
+
+def test_item_links_an_unregistered_location_to_the_browse_filter(client):
+    html = client.get("/item/book/2").text
+    assert '<a href="/browse/book?location=Orphan+Room">Orphan Room</a>' in html
+
+
+def test_item_hides_a_missing_or_unknown_location(client):
+    assert "Location" not in client.get("/item/book/3").text
+    assert "Location" not in client.get("/item/journal/2").text

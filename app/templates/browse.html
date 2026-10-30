@@ -3,6 +3,12 @@
 {% block title %}{{ spec.label_plural }} - {{ site_title }}{% endblock %}
 {% block content %}
 <h1>{{ spec.label_plural }}</h1>
+{% if location %}
+<p class="filter">
+  {% if location == 'UNKNOWN' %}{{ _('Unknown location') }}{% else %}{% trans name=location %}Location: {{ name }}{% endtrans %}{% endif %}
+  <a href="{{ base }}/browse/{{ spec.key }}">{{ _('Clear filter') }}</a>
+</p>
+{% endif %}
 <p class="count">
   {% trans count=result.total %}{{ count }} item{% pluralize %}{{ count }} items{% endtrans %}
 </p>

@@ -11,12 +11,12 @@ CREATE TABLE item_borrower (
   memberid TEXT, copyid TEXT, reserved_date TEXT, duedate TEXT
 );
 CREATE TABLE journal (
-  myoid INTEGER PRIMARY KEY, title TEXT NOT NULL,
+  myoid INTEGER PRIMARY KEY, title TEXT NOT NULL, location TEXT,
   display_number INTEGER, issueno INTEGER NOT NULL DEFAULT 0,
   issuevolume INTEGER NOT NULL DEFAULT 0
 );
 CREATE TABLE magazine (
-  myoid INTEGER PRIMARY KEY, title TEXT NOT NULL,
+  myoid INTEGER PRIMARY KEY, title TEXT NOT NULL, location TEXT,
   display_number INTEGER, issueno INTEGER NOT NULL DEFAULT 0,
   issuevolume INTEGER NOT NULL DEFAULT 0
 );
@@ -50,6 +50,9 @@ CREATE TABLE book_note (
   myoid INTEGER PRIMARY KEY AUTOINCREMENT, item_oid INTEGER NOT NULL,
   grp INTEGER NOT NULL, seq INTEGER NOT NULL, note TEXT NOT NULL
 );
+CREATE TABLE locations (
+  location TEXT NOT NULL, type TEXT NOT NULL, PRIMARY KEY (location, type)
+);
 
 -- Cover is a 1x1 transparent PNG.
 INSERT INTO book (id, isbn13, title, author, publisher, pdate, quantity, marc_tags, front_cover)
@@ -73,6 +76,15 @@ VALUES (1, 'barcode-1', 'UNKNOWN', ' UNKNOWN ', 'UNKNOWN', 'UNKNOWN');
 UPDATE book SET description = 'A comic <i>space</i> opera.' || char(10) || 'Second line.',
   keyword = 'comedy, towel'
 WHERE isbn13 = '9780345391803';
+
+-- Locations: Dune is an orphan (not in locations), Wild_Cards and the magazines have none.
+UPDATE book SET location = 'Shelf A' WHERE isbn13 = '9780345391803';
+UPDATE book SET location = 'Orphan Room' WHERE isbn13 = '9780441172719';
+UPDATE journal SET location = 'Shelf A' WHERE myoid = 1;
+UPDATE journal SET location = 'UNKNOWN' WHERE myoid = 2;
+INSERT INTO locations (location, type) VALUES
+ ('Shelf A', 'Book'), ('Shelf A', 'Journal'), ('Reading Room', 'Magazine'),
+ ('Ghost/Annex', 'Book'), ('shelf a', 'Book');
 
 -- Placeholder values that must be treated as empty; "N/A Station" is real content.
 UPDATE book SET description = '  N/A  ', edition = 'N/A', place = 'N/A Station'

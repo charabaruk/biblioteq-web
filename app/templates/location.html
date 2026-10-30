@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% from "_components.html" import recent_sections with context %}
+{% block title %}{% if unknown %}{{ _('Unknown location') }}{% else %}{% trans name=location %}Location: {{ name }}{% endtrans %}{% endif %} - {{ site_title }}{% endblock %}
+{% block content %}
+<h1>{% if unknown %}{{ _('Unknown location') }}{% else %}{% trans name=location %}Location: {{ name }}{% endtrans %}{% endif %}</h1>
+{% if sections %}
+{{ recent_sections(sections, location) }}
+{% else %}
+<p>{{ _('No items at this location.') }}</p>
+{% endif %}
+{% endblock %}

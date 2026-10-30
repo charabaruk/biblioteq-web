@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% from "_components.html" import card with context %}
+{% from "_components.html" import recent_sections with context %}
 {% block content %}
 <section class="hero">
   <h1>{{ _('Search the collection') }}</h1>
@@ -13,12 +13,9 @@
     <button type="submit">{{ pgettext('button', 'Search') }}</button>
   </form>
 </section>
-{% for spec, items in sections %}
-<section>
-  <h2>{{ _('Recently added:') }} {{ spec.label_plural }} <a class="more" href="{{ base }}/browse/{{ spec.key }}">{{ _('Browse all') }}</a></h2>
-  <div class="grid">{% for it in items %}{{ card(it, spec.label) }}{% endfor %}</div>
-</section>
+{% if sections %}
+{{ recent_sections(sections) }}
 {% else %}
 <p>{{ _('No item types are available in the configured database.') }}</p>
-{% endfor %}
+{% endif %}
 {% endblock %}

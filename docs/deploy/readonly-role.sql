@@ -12,6 +12,9 @@ GRANT SELECT ON
   book, dvd, cd, journal, magazine, videogame, grey_literature, photograph_collection
   TO biblioteq_web;
 
+-- Location pages and filters read the drop-down list of locations.
+GRANT SELECT ON locations TO biblioteq_web;
+
 -- Availability only counts checkouts; borrower identities are not granted.
 GRANT SELECT (item_oid, type) ON item_borrower TO biblioteq_web;
 

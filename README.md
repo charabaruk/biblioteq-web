@@ -69,8 +69,9 @@ All settings are environment variables; see [.env.example](.env.example).
 | Path | Description |
 | --- | --- |
 | `/` | Search form and recently added items |
-| `/search?q=&type=&page=` | Search across item types |
-| `/browse/{type}` | Browse one item type |
+| `/search?q=&type=&location=&page=` | Search across item types, optionally at one location |
+| `/browse/{type}?location=&page=` | Browse one item type, optionally at one location |
+| `/location/{name}` | Recently added items at a location; `UNKNOWN` lists items with none |
 | `/item/{type}/{id}` | Item details and availability |
 | `/cover/{type}/{id}?side=front\|back` | Cover image from the database |
 | `/healthz`, `/readyz` | Liveness and database readiness |
