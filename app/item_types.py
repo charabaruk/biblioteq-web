@@ -111,6 +111,8 @@ class ItemType:
     borrower_type: str | None = None  # value of item_borrower.type for this table
     front_cover: str | None = None
     back_cover: str | None = None
+    location: str | None = None  # column holding the item's location
+    location_type: str | None = None  # value of locations.type for this table
     pk: str = "myoid"
 
 
@@ -204,6 +206,8 @@ ITEM_TYPES: tuple[ItemType, ...] = (
         ),
         quantity="quantity",
         borrower_type="Book",
+        location="location",
+        location_type="Book",
         front_cover="front_cover",
         back_cover="back_cover",
     ),
@@ -277,6 +281,8 @@ ITEM_TYPES: tuple[ItemType, ...] = (
         ),
         quantity="quantity",
         borrower_type="DVD",
+        location="location",
+        location_type="DVD",
         front_cover="front_cover",
         back_cover="back_cover",
     ),
@@ -361,6 +367,8 @@ ITEM_TYPES: tuple[ItemType, ...] = (
         ),
         quantity="quantity",
         borrower_type="CD",
+        location="location",
+        location_type="CD",
         front_cover="front_cover",
         back_cover="back_cover",
     ),
@@ -433,6 +441,8 @@ ITEM_TYPES: tuple[ItemType, ...] = (
         ),
         quantity="quantity",
         borrower_type="Journal",
+        location="location",
+        location_type="Journal",
         front_cover="front_cover",
         back_cover="back_cover",
     ),
@@ -505,6 +515,8 @@ ITEM_TYPES: tuple[ItemType, ...] = (
         ),
         quantity="quantity",
         borrower_type="Magazine",
+        location="location",
+        location_type="Magazine",
         front_cover="front_cover",
         back_cover="back_cover",
     ),
@@ -574,6 +586,8 @@ ITEM_TYPES: tuple[ItemType, ...] = (
         ),
         quantity="quantity",
         borrower_type="Video Game",
+        location="location",
+        location_type="Video Game",
         front_cover="front_cover",
         back_cover="back_cover",
     ),
@@ -627,6 +641,8 @@ ITEM_TYPES: tuple[ItemType, ...] = (
             ),
         ),
         front_cover="front_cover",
+        location="location",
+        location_type="Grey Literature",
     ),
     ItemType(
         key="photograph",
@@ -666,6 +682,8 @@ ITEM_TYPES: tuple[ItemType, ...] = (
             ),
         ),
         front_cover="image_scaled",
+        location="location",
+        location_type="Photograph Collection",
     ),
 )
 
@@ -747,4 +765,5 @@ def resolve(
         quantity=keep(spec.quantity),
         front_cover=keep(spec.front_cover),
         back_cover=keep(spec.back_cover),
+        location=keep(spec.location),
     )
