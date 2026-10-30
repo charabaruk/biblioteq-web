@@ -55,6 +55,9 @@ CREATE TABLE book_note (
   myoid bigserial PRIMARY KEY, item_oid bigint NOT NULL,
   grp integer NOT NULL, seq integer NOT NULL, note text NOT NULL
 );
+CREATE TABLE locations (
+  location text NOT NULL, type varchar(32) NOT NULL, PRIMARY KEY (location, type)
+);
 
 -- 1x1 transparent PNG
 INSERT INTO book (id, isbn13, title, author, publisher, pdate, quantity, marc_tags, front_cover)

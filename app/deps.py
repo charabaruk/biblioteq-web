@@ -1,5 +1,6 @@
 """Shared FastAPI dependencies."""
 
+from dataclasses import replace
 from threading import Lock
 
 from fastapi import Depends, HTTPException, Request
@@ -25,9 +26,9 @@ def get_catalog(conn: Connection = Depends(get_conn)) -> Catalog:
 
 def get_localized_catalog(request: Request, catalog: Catalog = Depends(get_catalog)) -> Catalog:
     translations = request.state.translations
-    return Catalog(
+    return replace(
+        catalog,
         types={key: localize_labels(spec, translations) for key, spec in catalog.types.items()},
-        has_borrowers=catalog.has_borrowers,
     )
 
 

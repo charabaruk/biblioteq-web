@@ -50,6 +50,9 @@ CREATE TABLE book_note (
   myoid INTEGER PRIMARY KEY AUTOINCREMENT, item_oid INTEGER NOT NULL,
   grp INTEGER NOT NULL, seq INTEGER NOT NULL, note TEXT NOT NULL
 );
+CREATE TABLE locations (
+  location TEXT NOT NULL, type TEXT NOT NULL, PRIMARY KEY (location, type)
+);
 
 -- Cover is a 1x1 transparent PNG.
 INSERT INTO book (id, isbn13, title, author, publisher, pdate, quantity, marc_tags, front_cover)

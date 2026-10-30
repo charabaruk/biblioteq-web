@@ -29,6 +29,7 @@ MAX_QUERY_LENGTH = 200
 class Catalog:
     types: dict[str, ItemType]
     has_borrowers: bool
+    has_locations: bool = False
 
 
 @dataclass(frozen=True)
@@ -91,7 +92,7 @@ def _columns_by_table(conn: Connection, schema: str) -> dict[str, set[str]]:
         for table in (
             [s.table for s in ITEM_TYPES]
             + [t for s in ITEM_TYPES for t in related_tables(s)]
-            + ["item_borrower"]
+            + ["item_borrower", "locations"]
         ):
             names = conn.execute(
                 text("SELECT name FROM pragma_table_info(:table)"), {"table": table}
@@ -125,7 +126,11 @@ def load_catalog(conn: Connection, schema: str) -> Catalog:
             continue
         types[spec.key] = resolved
     conn.rollback()
-    return Catalog(types=types, has_borrowers="item_borrower" in columns)
+    return Catalog(
+        types=types,
+        has_borrowers="item_borrower" in columns,
+        has_locations={"location", "type"} <= columns.get("locations", set()),
+    )
 
 
 def _like_pattern(term: str) -> str:
