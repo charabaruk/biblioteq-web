@@ -23,6 +23,7 @@ log = logging.getLogger(__name__)
 
 MAX_TERMS = 8
 MAX_QUERY_LENGTH = 200
+UNKNOWN_LOCATION = "UNKNOWN"  # BiblioteQ's stand-in for no location
 
 
 @dataclass(frozen=True)
@@ -153,31 +154,41 @@ def _flag(column: str | None) -> str:
     return f"CASE WHEN {quote(column)} IS NOT NULL THEN 1 ELSE 0 END"
 
 
-def _where_sql(spec: ItemType, n_terms: int) -> str:
-    if not n_terms:
-        return ""
+def _location_clause(spec: ItemType, location: str) -> str:
+    # A type without a location column cannot match any location.
+    if not spec.location:
+        return "0 = 1"
+    column = quote(spec.location)
+    if location == UNKNOWN_LOCATION:
+        return f"({column} IS NULL OR {column} = :loc)"
+    return f"{column} = :loc"
+
+
+def _where_sql(spec: ItemType, n_terms: int, location: str | None = None) -> str:
     # Every term must match at least one searchable column.
     cols = spec.search_columns or (spec.title,)
     clauses = [
         "(" + " OR ".join(f"lower({_text(c)}) LIKE lower(:t{i}) ESCAPE '\\'" for c in cols) + ")"
         for i in range(n_terms)
     ]
-    return " WHERE " + " AND ".join(clauses)
+    if location is not None:
+        clauses.append(_location_clause(spec, location))
+    return " WHERE " + " AND ".join(clauses) if clauses else ""
 
 
-def _select_sql(spec: ItemType, n_terms: int) -> str:
+def _select_sql(spec: ItemType, n_terms: int, location: str | None = None) -> str:
     return (
         f"SELECT '{spec.key}' AS type, {quote(spec.pk)} AS id, {_text(spec.title)} AS title, "
         f"{_text(spec.creator)} AS creator, {_text(spec.identifier)} AS identifier, "
         f"{_flag(spec.front_cover)} AS has_cover "
-        f"FROM {quote(spec.table)}" + _where_sql(spec, n_terms)
+        f"FROM {quote(spec.table)}" + _where_sql(spec, n_terms, location)
     )
 
 
-def _keys_sql(spec: ItemType, n_terms: int) -> str:
+def _keys_sql(spec: ItemType, n_terms: int, location: str | None = None) -> str:
     return (
         f"SELECT '{spec.key}' AS type, {quote(spec.pk)} AS id, {_text(spec.title)} AS title "
-        f"FROM {quote(spec.table)}" + _where_sql(spec, n_terms)
+        f"FROM {quote(spec.table)}" + _where_sql(spec, n_terms, location)
     )
 
 
@@ -195,9 +206,10 @@ def _natural_page(
     page: int,
     page_size: int,
     numbers: str,
+    location: str | None = None,
 ) -> Page:
     # Sorting happens here because the database has no portable natural collation.
-    union = " UNION ALL ".join(_keys_sql(s, len(terms)) for s in specs)
+    union = " UNION ALL ".join(_keys_sql(s, len(terms), location) for s in specs)
     key = title_sort_key(numbers)
     keys = sorted(
         conn.execute(text(union), params).all(),
@@ -232,11 +244,13 @@ def search(
     page: int,
     page_size: int,
     natural: str | None = None,
+    location: str | None = None,
 ) -> Page:
     """Search the given types (all available if empty). An empty query lists everything.
 
     `natural` is "integer" or "decimal" to order titles naturally in Python;
-    None orders in SQL by lowercased title.
+    None orders in SQL by lowercased title. `location` keeps items at exactly that
+    location; "UNKNOWN" also keeps items with none.
     """
     specs = [catalog.types[k] for k in type_keys if k in catalog.types] or list(
         catalog.types.values()
@@ -245,9 +259,11 @@ def search(
         return Page([], 0, 1, page_size)
     terms = parse_terms(query)
     params: dict[str, object] = {f"t{i}": _like_pattern(t) for i, t in enumerate(terms)}
+    if location is not None:
+        params["loc"] = location
     if natural:
-        return _natural_page(conn, specs, terms, params, page, page_size, natural)
-    union = " UNION ALL ".join(_select_sql(s, len(terms)) for s in specs)
+        return _natural_page(conn, specs, terms, params, page, page_size, natural, location)
+    union = " UNION ALL ".join(_select_sql(s, len(terms), location) for s in specs)
 
     total = conn.execute(text(f"SELECT count(*) FROM ({union}) u"), params).scalar_one()
     page = max(1, min(page, max(1, -(-total // page_size))))
@@ -262,11 +278,14 @@ def search(
     return Page(items, total, page, page_size)
 
 
-def recent(conn: Connection, spec: ItemType, limit: int) -> list[dict]:
+def recent(conn: Connection, spec: ItemType, limit: int, location: str | None = None) -> list[dict]:
     """Most recently added rows of one type (highest primary key first)."""
+    params: dict[str, object] = {"limit": limit}
+    if location is not None:
+        params["loc"] = location
     rows = conn.execute(
-        text(f"{_select_sql(spec, 0)} ORDER BY {quote(spec.pk)} DESC LIMIT :limit"),
-        {"limit": limit},
+        text(f"{_select_sql(spec, 0, location)} ORDER BY {quote(spec.pk)} DESC LIMIT :limit"),
+        params,
     ).mappings()
     items = [dict(r) for r in rows]
     conn.rollback()
