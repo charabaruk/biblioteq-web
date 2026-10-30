@@ -30,7 +30,7 @@ BiblioteQ ([ADR-0005](0005-support-sqlite-and-postgresql.md)).
 - Item pages hide the location when it is `NULL` or `UNKNOWN`. Otherwise they link to the location
   page if that exact name is registered for the item's type, and to the browse filter if not.
 - `locations` is read only for the filter options, page lookup and link check. If the table is
-  missing, location features are turned off.
+  missing, the options list is empty and named locations redirect, as if unregistered.
 - No index page of locations, no hierarchy, and no copy-level locations (the copy tables have no
   `location` column).
 

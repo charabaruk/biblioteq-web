@@ -38,6 +38,11 @@ def test_catalog_without_locations_table(make_conn):
 
 
 BOOKS = """
+DELETE FROM locations;
+DELETE FROM journal;
+DELETE FROM magazine;
+CREATE TABLE videogame (myoid INTEGER PRIMARY KEY, title TEXT NOT NULL);
+INSERT INTO videogame (title) VALUES ('Pong');
 DELETE FROM book;
 INSERT INTO book (title, quantity, location) VALUES
  ('At home', 1, 'home'), ('At Home', 1, 'Home'), ('At HOME', 1, 'HOME'),
@@ -80,7 +85,7 @@ def test_location_filter_is_exact(books, natural, location, expected):
 
 def test_types_without_a_location_column_never_match(books):
     conn, catalog = books
-    assert catalog.types["journal"].location is None
+    assert catalog.types["videogame"].location is None
     for location in ("Shelf A", "UNKNOWN"):
         page = repository.search(conn, catalog, "", [], 1, 50, None, location)
         assert {i["type"] for i in page.items} == {"book"}
@@ -109,7 +114,7 @@ CREATE TABLE dvd (myoid INTEGER PRIMARY KEY, title TEXT NOT NULL, location TEXT)
 INSERT INTO dvd (title, location) VALUES ('Film', 'Shelf A'), ('Lost film', NULL);
 INSERT INTO locations (location, type) VALUES
  ('Shelf A', 'Book'), ('Shelf A', 'DVD'), ('home', 'Book'), ('Home', 'CD'),
- ('Annex', 'Journal'), ('Basement ', 'Book');
+ ('Annex', 'Video Game'), ('Basement ', 'Book');
 """
 
 

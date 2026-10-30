@@ -75,6 +75,34 @@ def home(
     )
 
 
+@router.get("/location/{name:path}", response_class=HTMLResponse)
+def location(
+    request: Request,
+    name: Annotated[str, Path(max_length=500)],
+    conn: Connection = Depends(get_conn),
+    catalog: Catalog = Depends(get_localized_catalog),
+):
+    unknown = name == repository.UNKNOWN_LOCATION
+    specs = (
+        repository.types_without_location(conn, catalog)
+        if unknown
+        else repository.location_types(conn, catalog, name)
+    )
+    if not specs and not unknown:
+        return RedirectResponse(f"{request.scope.get('root_path', '')}/")
+    sections = [(spec, repository.recent(conn, spec, HOME_RECENT, name)) for spec in specs]
+    return templates.TemplateResponse(
+        request,
+        "location.html",
+        {
+            "types": catalog.types.values(),
+            "location": name,
+            "unknown": unknown,
+            "sections": [s for s in sections if s[1]],
+        },
+    )
+
+
 @router.get("/search", response_class=HTMLResponse)
 def search(
     request: Request,

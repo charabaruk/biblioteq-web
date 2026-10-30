@@ -11,12 +11,12 @@ CREATE TABLE item_borrower (
   memberid text, copyid text, reserved_date text, duedate text
 );
 CREATE TABLE journal (
-  myoid bigint PRIMARY KEY, title text NOT NULL,
+  myoid bigint PRIMARY KEY, title text NOT NULL, location text,
   display_number integer, issueno integer NOT NULL DEFAULT 0,
   issuevolume integer NOT NULL DEFAULT 0
 );
 CREATE TABLE magazine (
-  myoid bigint PRIMARY KEY, title text NOT NULL,
+  myoid bigint PRIMARY KEY, title text NOT NULL, location text,
   display_number integer, issueno integer NOT NULL DEFAULT 0,
   issuevolume integer NOT NULL DEFAULT 0
 );
@@ -81,6 +81,15 @@ VALUES (1, 'barcode-1', 'UNKNOWN', ' UNKNOWN ', 'UNKNOWN', 'UNKNOWN');
 UPDATE book SET description = E'A comic <i>space</i> opera.\nSecond line.',
   keyword = 'comedy, towel'
 WHERE isbn13 = '9780345391803';
+
+-- Locations: Dune is an orphan (not in locations), Wild_Cards and the magazines have none.
+UPDATE book SET location = 'Shelf A' WHERE isbn13 = '9780345391803';
+UPDATE book SET location = 'Orphan Room' WHERE isbn13 = '9780441172719';
+UPDATE journal SET location = 'Shelf A' WHERE myoid = 1;
+UPDATE journal SET location = 'UNKNOWN' WHERE myoid = 2;
+INSERT INTO locations (location, type) VALUES
+ ('Shelf A', 'Book'), ('Shelf A', 'Journal'), ('Reading Room', 'Magazine'),
+ ('Ghost/Annex', 'Book'), ('shelf a', 'Book');
 
 -- Placeholder values that must be treated as empty; "N/A Station" is real content.
 UPDATE book SET description = '  N/A  ', edition = 'N/A', place = 'N/A Station'

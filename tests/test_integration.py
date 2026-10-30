@@ -104,3 +104,44 @@ def test_connection_is_read_only(configured):
             raise AssertionError("write unexpectedly succeeded")
         except DBAPIError:
             pass
+
+
+def test_location_page_lists_items_of_registered_types(client):
+    r = client.get("/location/Shelf A")
+    assert r.status_code == 200
+    assert "Location: Shelf A" in r.text
+    assert "Hitchhiker" in r.text and "Hidden Journal Values" in r.text
+    assert "Dune" not in r.text and "Visible Journal Values" not in r.text
+    assert "/browse/book?location=Shelf%20A" in r.text
+
+
+def test_location_names_are_exact(client):
+    off = {"follow_redirects": False}
+    assert client.get("/location/SHELF A", **off).status_code == 307
+    assert client.get("/location/Shelf A ", **off).status_code == 307
+    r = client.get("/location/shelf a", **off)
+    assert r.status_code == 200 and "No items at this location." in r.text
+
+
+def test_unregistered_location_redirects_to_the_landing_page(client):
+    for name in ("Orphan Room", "Nowhere", ""):
+        r = client.get(f"/location/{name}", follow_redirects=False)
+        assert (r.status_code, r.headers["location"]) == (307, "/")
+
+
+def test_registered_location_without_items_shows_an_empty_page(client):
+    r = client.get("/location/Reading Room")
+    assert r.status_code == 200 and "No items at this location." in r.text
+
+
+def test_location_names_may_contain_slashes(client):
+    assert "Location: Ghost/Annex" in client.get("/location/Ghost/Annex").text
+
+
+def test_unknown_location_page_lists_items_without_a_location(client):
+    r = client.get("/location/UNKNOWN")
+    assert r.status_code == 200 and "Unknown location" in r.text
+    assert "Wild_Cards" in r.text and "Visible Journal Values" in r.text
+    assert "Hidden Magazine Values" in r.text
+    assert "Hitchhiker" not in r.text and "Dune" not in r.text
+    assert "/browse/journal?location=UNKNOWN" in r.text
