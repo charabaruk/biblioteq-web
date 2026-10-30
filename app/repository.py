@@ -292,6 +292,63 @@ def recent(conn: Connection, spec: ItemType, limit: int, location: str | None = 
     return items
 
 
+def _registered_specs(catalog: Catalog) -> list[ItemType]:
+    return [s for s in catalog.types.values() if s.location and s.location_type]
+
+
+def location_options(conn: Connection, catalog: Catalog) -> list[str]:
+    """Distinct locations registered for any type the catalog serves, for the filter list."""
+    specs = _registered_specs(catalog)
+    if not catalog.has_locations or not specs:
+        return []
+    marks = ", ".join(f":t{n}" for n in range(len(specs)))
+    names = conn.execute(
+        text(f"SELECT DISTINCT location FROM locations WHERE type IN ({marks})"),
+        {f"t{n}": s.location_type for n, s in enumerate(specs)},
+    ).scalars()
+    options = list(names)
+    conn.rollback()
+    return sorted(options, key=lambda name: (name.casefold(), name))
+
+
+def location_types(conn: Connection, catalog: Catalog, name: str) -> list[ItemType]:
+    """Catalog types registered for exactly this location, in registry order."""
+    if not catalog.has_locations:
+        return []
+    registered = set(
+        conn.execute(
+            text("SELECT type FROM locations WHERE location = :name"), {"name": name}
+        ).scalars()
+    )
+    conn.rollback()
+    return [s for s in _registered_specs(catalog) if s.location_type in registered]
+
+
+def location_registered(conn: Connection, catalog: Catalog, spec: ItemType, name: str) -> bool:
+    """Whether `locations` lists exactly this name for the item's own type."""
+    if not catalog.has_locations or not spec.location_type:
+        return False
+    found = conn.execute(
+        text("SELECT 1 FROM locations WHERE location = :name AND type = :type"),
+        {"name": name, "type": spec.location_type},
+    ).first()
+    conn.rollback()
+    return found is not None
+
+
+def types_without_location(conn: Connection, catalog: Catalog) -> list[ItemType]:
+    """Catalog types with at least one item that has no location (NULL or UNKNOWN)."""
+    found = []
+    for spec in catalog.types.values():
+        if not spec.location:
+            continue
+        sql = f"SELECT 1 FROM {quote(spec.table)} WHERE {_location_clause(spec, UNKNOWN_LOCATION)}"
+        if conn.execute(text(sql + " LIMIT 1"), {"loc": UNKNOWN_LOCATION}).first():
+            found.append(spec)
+    conn.rollback()
+    return found
+
+
 def _clean(value: object | None) -> str:
     return str(value).strip() if value is not None else ""
 
