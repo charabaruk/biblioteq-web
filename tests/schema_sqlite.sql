@@ -22,28 +22,33 @@ CREATE TABLE magazine (
 );
 CREATE TABLE book_copy_info (
   condition TEXT, copy_number INTEGER NOT NULL DEFAULT 1, copyid TEXT NOT NULL,
-  item_oid INTEGER NOT NULL, myoid INTEGER UNIQUE, notes TEXT, originality TEXT,
-  status TEXT, PRIMARY KEY (copyid, item_oid)
+  item_oid INTEGER NOT NULL, location TEXT NOT NULL DEFAULT 'UNKNOWN', myoid INTEGER UNIQUE,
+  notes TEXT, originality TEXT, status TEXT, PRIMARY KEY (copyid, item_oid)
 );
 CREATE TABLE cd_copy_info (
   copy_number INTEGER NOT NULL DEFAULT 1, copyid TEXT NOT NULL, item_oid INTEGER NOT NULL,
-  myoid INTEGER UNIQUE, notes TEXT, status TEXT, PRIMARY KEY (copyid, item_oid)
+  location TEXT NOT NULL DEFAULT 'UNKNOWN', myoid INTEGER UNIQUE, notes TEXT, status TEXT,
+  PRIMARY KEY (copyid, item_oid)
 );
 CREATE TABLE dvd_copy_info (
   copy_number INTEGER NOT NULL DEFAULT 1, copyid TEXT NOT NULL, item_oid INTEGER NOT NULL,
-  myoid INTEGER UNIQUE, notes TEXT, status TEXT, PRIMARY KEY (copyid, item_oid)
+  location TEXT NOT NULL DEFAULT 'UNKNOWN', myoid INTEGER UNIQUE, notes TEXT, status TEXT,
+  PRIMARY KEY (copyid, item_oid)
 );
 CREATE TABLE journal_copy_info (
   copy_number INTEGER NOT NULL DEFAULT 1, copyid TEXT NOT NULL, item_oid INTEGER NOT NULL,
-  myoid INTEGER UNIQUE, notes TEXT, status TEXT, PRIMARY KEY (copyid, item_oid)
+  location TEXT NOT NULL DEFAULT 'UNKNOWN', myoid INTEGER UNIQUE, notes TEXT, status TEXT,
+  PRIMARY KEY (copyid, item_oid)
 );
 CREATE TABLE magazine_copy_info (
   copy_number INTEGER NOT NULL DEFAULT 1, copyid TEXT NOT NULL, item_oid INTEGER NOT NULL,
-  myoid INTEGER UNIQUE, notes TEXT, status TEXT, PRIMARY KEY (copyid, item_oid)
+  location TEXT NOT NULL DEFAULT 'UNKNOWN', myoid INTEGER UNIQUE, notes TEXT, status TEXT,
+  PRIMARY KEY (copyid, item_oid)
 );
 CREATE TABLE videogame_copy_info (
   copy_number INTEGER NOT NULL DEFAULT 1, copyid TEXT NOT NULL, item_oid INTEGER NOT NULL,
-  myoid INTEGER UNIQUE, notes TEXT, status TEXT, PRIMARY KEY (copyid, item_oid)
+  location TEXT NOT NULL DEFAULT 'UNKNOWN', myoid INTEGER UNIQUE, notes TEXT, status TEXT,
+  PRIMARY KEY (copyid, item_oid)
 );
 -- Test-only related table that exercises table sections.
 CREATE TABLE book_note (

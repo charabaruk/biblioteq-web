@@ -22,32 +22,37 @@ CREATE TABLE magazine (
 );
 CREATE TABLE book_copy_info (
   condition text, copy_number integer NOT NULL DEFAULT 1, copyid varchar(64) NOT NULL,
-  item_oid bigint NOT NULL, myoid bigserial UNIQUE, notes text, originality text,
-  status text, PRIMARY KEY (copyid, item_oid)
+  item_oid bigint NOT NULL, location text NOT NULL DEFAULT 'UNKNOWN', myoid bigserial UNIQUE,
+  notes text, originality text, status text, PRIMARY KEY (copyid, item_oid)
 );
 CREATE TABLE cd_copy_info (
   copy_number integer NOT NULL DEFAULT 1, copyid varchar(64) NOT NULL,
-  item_oid bigint NOT NULL, myoid bigserial UNIQUE, notes text, status text,
+  item_oid bigint NOT NULL, location text NOT NULL DEFAULT 'UNKNOWN', myoid bigserial UNIQUE,
+  notes text, status text,
   PRIMARY KEY (copyid, item_oid)
 );
 CREATE TABLE dvd_copy_info (
   copy_number integer NOT NULL DEFAULT 1, copyid varchar(64) NOT NULL,
-  item_oid bigint NOT NULL, myoid bigserial UNIQUE, notes text, status text,
+  item_oid bigint NOT NULL, location text NOT NULL DEFAULT 'UNKNOWN', myoid bigserial UNIQUE,
+  notes text, status text,
   PRIMARY KEY (copyid, item_oid)
 );
 CREATE TABLE journal_copy_info (
   copy_number integer NOT NULL DEFAULT 1, copyid varchar(64) NOT NULL,
-  item_oid bigint NOT NULL, myoid bigserial UNIQUE, notes text, status text,
+  item_oid bigint NOT NULL, location text NOT NULL DEFAULT 'UNKNOWN', myoid bigserial UNIQUE,
+  notes text, status text,
   PRIMARY KEY (copyid, item_oid)
 );
 CREATE TABLE magazine_copy_info (
   copy_number integer NOT NULL DEFAULT 1, copyid varchar(64) NOT NULL,
-  item_oid bigint NOT NULL, myoid bigserial UNIQUE, notes text, status text,
+  item_oid bigint NOT NULL, location text NOT NULL DEFAULT 'UNKNOWN', myoid bigserial UNIQUE,
+  notes text, status text,
   PRIMARY KEY (copyid, item_oid)
 );
 CREATE TABLE videogame_copy_info (
   copy_number integer NOT NULL DEFAULT 1, copyid varchar(64) NOT NULL,
-  item_oid bigint NOT NULL, myoid bigserial UNIQUE, notes text, status text,
+  item_oid bigint NOT NULL, location text NOT NULL DEFAULT 'UNKNOWN', myoid bigserial UNIQUE,
+  notes text, status text,
   PRIMARY KEY (copyid, item_oid)
 );
 -- Test-only related table that exercises table sections.
