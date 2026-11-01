@@ -14,7 +14,7 @@ The initial v0.2 scope is:
 
 Proposed focus:
 
-- Initial localization support: replace bare strings in templates with translatable strings and generate translation catalogs.
+- Initial localization support: replace bare strings in templates with translatable strings and generate translation catalogs. *(done)*
 - Show information about individual item copies on item pages. *(done)*
 - Add pages for item locations and browsing items at them. *(done)*
 
