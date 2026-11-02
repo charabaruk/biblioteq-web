@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.3.0] - 2026-11-01
+
+### Added
+
+- Browse registered locations, filter search and browse results by location, and link locations from items and copies ([`a9996f9`](https://github.com/charabaruk/biblioteq-web/commit/a9996f9), [`1391146`](https://github.com/charabaruk/biblioteq-web/commit/1391146), [`10857da`](https://github.com/charabaruk/biblioteq-web/commit/10857da), [`6636374`](https://github.com/charabaruk/biblioteq-web/commit/6636374))
+- Show copy-level holdings information on item pages ([`739f280`](https://github.com/charabaruk/biblioteq-web/commit/739f280), [`fca8fb0`](https://github.com/charabaruk/biblioteq-web/commit/fca8fb0))
+- Provide a French interface with request-time language selection ([`1335f6f`](https://github.com/charabaruk/biblioteq-web/commit/1335f6f), [`3327d11`](https://github.com/charabaruk/biblioteq-web/commit/3327d11))
+
+### Changed
+
+- Improve accessibility of search forms ([`955b44a`](https://github.com/charabaruk/biblioteq-web/commit/955b44a))
+
 ## [0.2.0] - 2026-10-26
 
 ### Changed
@@ -35,5 +47,6 @@ _Initial release._
 - Decode base64-encoded cover images ([`b18483c`](https://github.com/charabaruk/biblioteq-web/commit/b18483c))
 - Match photograph collection fields to the database schema ([`cb8165a`](https://github.com/charabaruk/biblioteq-web/commit/cb8165a))
 
+[0.3.0]: https://github.com/charabaruk/biblioteq-web/releases/tag/v0.3.0
 [0.2.0]: https://github.com/charabaruk/biblioteq-web/releases/tag/v0.2.0
 [0.1.0]: https://github.com/charabaruk/biblioteq-web/releases/tag/v0.1.0
