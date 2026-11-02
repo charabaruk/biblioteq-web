@@ -5,7 +5,7 @@
   <table>
     <thead><tr>{% for h in section.headers %}<th scope="col">{{ h }}</th>{% endfor %}</tr></thead>
     <tbody>
-      {% for row in rows %}<tr>{% for cell in row %}<td>{{ cell }}</td>{% endfor %}</tr>{% endfor %}
+      {% for row in rows %}<tr>{% for cell, url in row %}<td>{% if url %}<a href="{{ base }}{{ url }}">{{ cell }}</a>{% else %}{{ cell }}{% endif %}</td>{% endfor %}</tr>{% endfor %}
     </tbody>
   </table>
   {% endfor %}

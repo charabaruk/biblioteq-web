@@ -105,7 +105,10 @@ def test_table_section_applies_row_limit(tabbed_client):
 
 def test_unknown_copy_info_values_are_hidden_but_whitespace_padded_values_are_not(client):
     html = _flat(client.get("/item/book/1/holdings", headers=FETCH).text)
-    assert "<td>barcode-1</td><td></td><td>UNKNOWN</td><td></td><td>UNKNOWN</td>" in html
+    assert (
+        '<td>barcode-1</td><td><a href="/location/Shelf%20A">Shelf A</a></td>'
+        "<td></td><td>UNKNOWN</td><td></td><td>UNKNOWN</td>"
+    ) in html
 
 
 def test_tab_route_without_header_is_a_full_page(tabbed_client):

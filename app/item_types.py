@@ -115,6 +115,18 @@ class ItemType:
     location_type: str | None = None  # value of locations.type for this table
     pk: str = "myoid"
 
+    def copy_location(self) -> TableSection | None:
+        """The copy table section that records a location per copy, if the database has one."""
+        for tab in self.tabs:
+            for section in tab.sections:
+                if (
+                    isinstance(section, TableSection)
+                    and section.table.endswith("_copy_info")
+                    and any(column == "location" for column, _ in section.columns)
+                ):
+                    return section
+        return None
+
 
 ITEM_TYPES: tuple[ItemType, ...] = (
     ItemType(
@@ -173,6 +185,7 @@ ITEM_TYPES: tuple[ItemType, ...] = (
                         fk="item_oid",
                         columns=(
                             ("copyid", _("Barcode")),
+                            ("location", _("Location")),
                             ("originality", _("Originality")),
                             ("condition", _("Condition")),
                             ("status", _("Status")),
@@ -256,6 +269,7 @@ ITEM_TYPES: tuple[ItemType, ...] = (
                         fk="item_oid",
                         columns=(
                             ("copyid", _("Barcode")),
+                            ("location", _("Location")),
                             ("status", _("Status")),
                             ("notes", _("Notes")),
                         ),
@@ -343,6 +357,7 @@ ITEM_TYPES: tuple[ItemType, ...] = (
                         fk="item_oid",
                         columns=(
                             ("copyid", _("Barcode")),
+                            ("location", _("Location")),
                             ("status", _("Status")),
                             ("notes", _("Notes")),
                         ),
@@ -415,6 +430,7 @@ ITEM_TYPES: tuple[ItemType, ...] = (
                         fk="item_oid",
                         columns=(
                             ("copyid", _("Barcode")),
+                            ("location", _("Location")),
                             ("status", _("Status")),
                             ("notes", _("Notes")),
                         ),
@@ -489,6 +505,7 @@ ITEM_TYPES: tuple[ItemType, ...] = (
                         fk="item_oid",
                         columns=(
                             ("copyid", _("Barcode")),
+                            ("location", _("Location")),
                             ("status", _("Status")),
                             ("notes", _("Notes")),
                         ),
@@ -561,6 +578,7 @@ ITEM_TYPES: tuple[ItemType, ...] = (
                         fk="item_oid",
                         columns=(
                             ("copyid", _("Barcode")),
+                            ("location", _("Location")),
                             ("status", _("Status")),
                             ("notes", _("Notes")),
                         ),

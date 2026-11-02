@@ -66,7 +66,10 @@ class Section:
     fields: list[tuple[str, str, str | None]] = field(default_factory=list)  # label, value, URL
     text: str = ""
     headers: list[str] = field(default_factory=list)
-    groups: list[tuple[str | None, list[list[str]]]] = field(default_factory=list)
+    # Table cells are (value, URL).
+    groups: list[tuple[str | None, list[list[tuple[str, str | None]]]]] = field(
+        default_factory=list
+    )
 
 
 @dataclass
@@ -160,10 +163,19 @@ def _location_clause(spec: ItemType, location: str) -> str:
     # A type without a location column cannot match any location.
     if not spec.location:
         return "0 = 1"
-    column = quote(spec.location)
+    column = f"{quote(spec.table)}.{quote(spec.location)}"
     if location == UNKNOWN_LOCATION:
         return f"({column} IS NULL OR {column} = :loc)"
-    return f"{column} = :loc"
+    copies = spec.copy_location()
+    if copies is None:
+        return f"{column} = :loc"
+    # A copy at UNKNOWN inherits its item's location, so only named copy locations match here.
+    table = quote(copies.table)
+    return (
+        f"({column} = :loc OR EXISTS (SELECT 1 FROM {table} "
+        f"WHERE {table}.{quote(copies.fk)} = {quote(spec.table)}.{quote(spec.pk)} "
+        f"AND {table}.{quote('location')} = :loc))"
+    )
 
 
 def _where_sql(spec: ItemType, n_terms: int, location: str | None = None) -> str:
@@ -405,7 +417,25 @@ def _own_values(conn: Connection, spec: ItemType, tab: TabSpec, item_id: int) ->
     }
 
 
-def _table_section(conn: Connection, section: TableSection, item_id: int) -> Section | None:
+def _item_location(conn: Connection, spec: ItemType, item_id: int) -> str:
+    if not spec.location:
+        return ""
+    value = conn.execute(
+        text(
+            f"SELECT {_text(spec.location)} FROM {quote(spec.table)} WHERE {quote(spec.pk)} = :id"
+        ),
+        {"id": item_id},
+    ).scalar()
+    return _location_value(value)
+
+
+def _table_section(
+    conn: Connection,
+    catalog: Catalog,
+    spec: ItemType,
+    section: TableSection,
+    item_id: int,
+) -> Section | None:
     names = [c for c, _ in section.columns]
     if section.group_by and section.group_by not in names:
         names.append(section.group_by)
@@ -417,15 +447,31 @@ def _table_section(conn: Connection, section: TableSection, item_id: int) -> Sec
     if not rows:
         return None
 
+    copies = spec.copy_location()
+    locating = copies is not None and copies.table == section.table
+    item_location = _item_location(conn, spec, item_id) if locating else ""
+    urls: dict[str, str] = {}
+
+    def cell(column: str, raw: object | None) -> tuple[str, str | None]:
+        if not (locating and column == "location"):
+            return _table_value(section, column, raw), None
+        # A copy at UNKNOWN is wherever its item is.
+        name = _location_value(raw) or item_location
+        if not name or not spec.location:
+            return name, None
+        if name not in urls:
+            urls[name] = _location_url(conn, catalog, spec, name)
+        return name, urls[name]
+
     index = {c: i for i, c in enumerate(names)}
-    groups: list[tuple[str | None, list[list[str]]]] = []
+    groups: list[tuple[str | None, list[list[tuple[str, str | None]]]]] = []
     for row in rows:
         heading = None
         if section.group_by:
             heading = f"{section.group_label} {_clean(row[index[section.group_by]])}".strip()
         if not groups or groups[-1][0] != heading:
             groups.append((heading, []))
-        groups[-1][1].append([_table_value(section, c, row[index[c]]) for c, _ in section.columns])
+        groups[-1][1].append([cell(c, row[index[c]]) for c, _ in section.columns])
     return Section("table", section.label, headers=[h for _, h in section.columns], groups=groups)
 
 
@@ -457,7 +503,7 @@ def _load_sections(
         elif isinstance(s, TextSection):
             if values.get(s.column):
                 sections.append(Section("text", s.label, text=values[s.column]))
-        elif built := _table_section(conn, s, item_id):
+        elif built := _table_section(conn, catalog, spec, s, item_id):
             sections.append(built)
     return sections
 

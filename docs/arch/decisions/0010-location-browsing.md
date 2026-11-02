@@ -1,6 +1,6 @@
 # ADR-0010: Location browsing
 
-- Status: Accepted
+- Status: Accepted (no-copy-level-locations part superseded by ADR-0011)
 - Date: 2026-10-29
 
 ## Context
