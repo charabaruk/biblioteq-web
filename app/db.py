@@ -1,5 +1,6 @@
 """Database engine and connection dependency. Every connection is read-only."""
 
+import os
 from collections.abc import Iterator
 from functools import lru_cache
 from urllib.parse import quote
@@ -30,6 +31,11 @@ def _sqlite_engine(s: Settings) -> Engine:
     path = make_url(s.db_url).database
     if not path or path == ":memory:":
         raise ConfigError("BIBLIOTEQ_DB_URL must point to a SQLite database file")
+
+    icu_path = s.sqlite_ext_icu_path
+    if icu_path and not os.path.exists(icu_path):
+        raise ConfigError("BIBLIOTEQ_SQLITE_EXT_ICU_PATH must point to an existing file")
+
     # mode=ro makes SQLite refuse to write or create the file.
     url = URL.create(
         "sqlite", database=f"file:{quote(path, safe='/:')}?mode=ro", query={"uri": "true"}
@@ -42,6 +48,12 @@ def _sqlite_engine(s: Settings) -> Engine:
     def _guard(dbapi_connection, _record):
         dbapi_connection.execute("PRAGMA query_only = ON")
         dbapi_connection.execute(f"PRAGMA busy_timeout = {int(s.db_statement_timeout_ms)}")
+        if icu_path:
+            try:
+                dbapi_connection.enable_load_extension(True)
+                dbapi_connection.load_extension(icu_path)
+            finally:
+                dbapi_connection.enable_load_extension(False)
 
     return engine
 

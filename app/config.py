@@ -26,6 +26,7 @@ class Settings:
     natural_sort: bool = True
     natural_sort_numbers: str = "integer"  # "integer" or "decimal"
     default_lang: str = "en"
+    sqlite_ext_icu_path: str | None = None
 
     @property
     def title_sort(self) -> str | None:
@@ -70,6 +71,9 @@ def load_settings() -> Settings:
     sort_numbers = os.environ.get("BIBLIOTEQ_NATURAL_SORT_NUMBERS", "").strip().lower() or "integer"
     if sort_numbers not in _SORT_NUMBERS:
         raise ConfigError("BIBLIOTEQ_NATURAL_SORT_NUMBERS must be integer or decimal")
+    icu_path = os.environ.get("BIBLIOTEQ_SQLITE_EXT_ICU_PATH")
+    if icu_path and not os.path.exists(icu_path):
+        raise ConfigError("BIBLIOTEQ_SQLITE_EXT_ICU_PATH must point to an existing file")
     return Settings(
         db_url=db_url,
         db_schema=schema,
@@ -83,6 +87,7 @@ def load_settings() -> Settings:
         natural_sort=_bool("BIBLIOTEQ_NATURAL_SORT", True),
         natural_sort_numbers=sort_numbers,
         default_lang=os.environ.get("DEFAULT_LANG", "en").strip().replace("_", "-"),
+        sqlite_ext_icu_path=icu_path,
     )
 
 

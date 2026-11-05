@@ -9,6 +9,27 @@ def test_requires_db_url(monkeypatch):
         load_settings()
 
 
+def test_sqlite_icu_path_defaults_to_none(monkeypatch):
+    monkeypatch.setenv("BIBLIOTEQ_DB_URL", "sqlite:////tmp/library.db")
+    monkeypatch.delenv("BIBLIOTEQ_SQLITE_EXT_ICU_PATH", raising=False)
+    assert load_settings().sqlite_ext_icu_path is None
+
+
+def test_sqlite_icu_path(monkeypatch, tmp_path):
+    icu_path = tmp_path / "icu.so"
+    icu_path.touch()
+    monkeypatch.setenv("BIBLIOTEQ_DB_URL", "sqlite:////tmp/library.db")
+    monkeypatch.setenv("BIBLIOTEQ_SQLITE_EXT_ICU_PATH", str(icu_path))
+    assert load_settings().sqlite_ext_icu_path == str(icu_path)
+
+
+def test_sqlite_icu_path_must_exist(monkeypatch, tmp_path):
+    monkeypatch.setenv("BIBLIOTEQ_DB_URL", "sqlite:////tmp/library.db")
+    monkeypatch.setenv("BIBLIOTEQ_SQLITE_EXT_ICU_PATH", str(tmp_path / "missing.so"))
+    with pytest.raises(ConfigError, match="BIBLIOTEQ_SQLITE_EXT_ICU_PATH"):
+        load_settings()
+
+
 def test_schema_defaults_to_public(monkeypatch):
     monkeypatch.setenv("BIBLIOTEQ_DB_URL", "postgresql+psycopg://u:p@h/d")
     monkeypatch.delenv("BIBLIOTEQ_DB_SCHEMA", raising=False)
