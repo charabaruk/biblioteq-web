@@ -21,6 +21,20 @@ def test_quote_accepts_plain_names():
     assert quote("front_cover") == '"front_cover"'
 
 
+def test_published_column_is_set_for_every_type_with_a_date():
+    published = {spec.key: spec.published for spec in ITEM_TYPES}
+    assert published == {
+        "book": "pdate",
+        "dvd": "rdate",
+        "cd": "rdate",
+        "journal": "pdate",
+        "magazine": "pdate",
+        "videogame": "rdate",
+        "greyliterature": "document_date",
+        "photograph": None,
+    }
+
+
 @pytest.mark.parametrize("bad", ['a"b', "a b", "1abc", "a;drop", ""])
 def test_quote_rejects_unsafe_names(bad):
     with pytest.raises(ValueError):
