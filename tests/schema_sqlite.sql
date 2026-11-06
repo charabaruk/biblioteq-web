@@ -4,19 +4,19 @@ CREATE TABLE book (
   id TEXT, isbn13 TEXT, title TEXT NOT NULL, author TEXT, publisher TEXT,
   pdate TEXT, place TEXT, edition TEXT, category TEXT, language TEXT,
   quantity INTEGER NOT NULL DEFAULT 1, location TEXT, keyword TEXT, description TEXT,
-  marc_tags TEXT, front_cover BLOB, back_cover BLOB
+  marc_tags TEXT, front_cover BLOB, back_cover BLOB, series_title TEXT, volume_number TEXT
 );
 CREATE TABLE item_borrower (
   myoid INTEGER PRIMARY KEY AUTOINCREMENT, item_oid INTEGER NOT NULL, type TEXT NOT NULL,
   memberid TEXT, copyid TEXT, reserved_date TEXT, duedate TEXT
 );
 CREATE TABLE journal (
-  myoid INTEGER PRIMARY KEY, title TEXT NOT NULL, location TEXT,
+  myoid INTEGER PRIMARY KEY, title TEXT NOT NULL, location TEXT, pdate TEXT,
   display_number INTEGER, issueno INTEGER NOT NULL DEFAULT 0,
   issuevolume INTEGER NOT NULL DEFAULT 0
 );
 CREATE TABLE magazine (
-  myoid INTEGER PRIMARY KEY, title TEXT NOT NULL, location TEXT,
+  myoid INTEGER PRIMARY KEY, title TEXT NOT NULL, location TEXT, pdate TEXT,
   display_number INTEGER, issueno INTEGER NOT NULL DEFAULT 0,
   issuevolume INTEGER NOT NULL DEFAULT 0
 );
@@ -90,6 +90,12 @@ UPDATE journal SET location = 'UNKNOWN' WHERE myoid = 2;
 INSERT INTO locations (location, type) VALUES
  ('Shelf A', 'Book'), ('Shelf A', 'Journal'), ('Reading Room', 'Magazine'),
  ('Ghost/Annex', 'Book'), ('shelf a', 'Book');
+
+-- Titles: a series with a volume, a series without one, and dated issues.
+UPDATE book SET series_title = 'Dune Chronicles', volume_number = '1' WHERE isbn13 = '9780441172719';
+UPDATE book SET series_title = 'Hitchhiker Series' WHERE isbn13 = '9780345391803';
+UPDATE journal SET pdate = '03/15/2024' WHERE myoid = 2;
+UPDATE magazine SET pdate = '2024-03-15' WHERE myoid = 2;
 
 -- Placeholder values that must be treated as empty; "N/A Station" is real content.
 UPDATE book SET description = '  N/A  ', edition = 'N/A', place = 'N/A Station'

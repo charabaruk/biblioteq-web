@@ -9,6 +9,7 @@ from urllib.parse import urlencode
 from natsort import natsort_keygen, ns
 from sqlalchemy import Connection, text
 
+from app.item_titles import TitleValues
 from app.item_types import (
     ITEM_TYPES,
     FieldsSection,
@@ -89,6 +90,7 @@ class Item:
     has_front: bool = False
     has_back: bool = False
     availability: Availability | None = None
+    title_values: TitleValues = field(default_factory=TitleValues)
 
 
 def _columns_by_table(conn: Connection, schema: str) -> dict[str, set[str]]:
@@ -520,11 +522,19 @@ def get_item(
 ) -> Item | None:
     """Load an item; lazy tabs stay unloaded unless named by `load`."""
     qty = quote(spec.quantity) if spec.quantity else "NULL"
+    display_number, volume, issue = spec.issue or (None, None, None)
+    series_title, volume_number = spec.series or (None, None)
     cols = [
         f"{_text(spec.title)} AS title",
         f"{_flag(spec.front_cover)} AS has_front",
         f"{_flag(spec.back_cover)} AS has_back",
         f"{qty} AS quantity",
+        f"{_text(display_number)} AS display_number",
+        f"{_text(volume)} AS volume",
+        f"{_text(issue)} AS issue",
+        f"{_text(spec.published)} AS published",
+        f"{_text(series_title)} AS series_title",
+        f"{_text(volume_number)} AS volume_number",
     ]
     row = (
         conn.execute(
@@ -544,6 +554,14 @@ def get_item(
         title=row["title"] or "(untitled)",
         has_front=bool(row["has_front"]),
         has_back=bool(row["has_back"]),
+        title_values=TitleValues(
+            display_number=row["display_number"],
+            volume=row["volume"],
+            issue=row["issue"],
+            published=row["published"],
+            series_title=row["series_title"],
+            volume_number=row["volume_number"],
+        ),
     )
     for tab in spec.tabs:
         loaded = not tab.lazy or tab.key == load

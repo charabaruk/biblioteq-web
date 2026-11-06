@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: biblioteq-web 0.3.0\n"
 "Report-Msgid-Bugs-To: https://github.com/charabaruk/biblioteq-web/issues\n"
-"POT-Creation-Date: 2026-11-05 19:15-0500\n"
+"POT-Creation-Date: 2026-11-06 13:54-0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -18,499 +18,519 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.18.0\n"
 
-#: app/item_types.py:135
+#: app/item_titles.py:50
+#, python-format
+msgid "vol. %(volume)s no. %(issue)s"
+msgstr ""
+
+#: app/item_titles.py:52
+#, python-format
+msgid "no. %(issue)s"
+msgstr ""
+
+#: app/item_titles.py:54
+#, python-format
+msgid "vol. %(volume)s"
+msgstr ""
+
+#: app/item_titles.py:117
+#, python-format
+msgid "%(series)s volume %(volume)s"
+msgstr ""
+
+#: app/item_types.py:137
 msgctxt "item-type"
 msgid "Book"
 msgstr ""
 
-#: app/item_types.py:136
+#: app/item_types.py:138
 msgctxt "item-type"
 msgid "Books"
 msgstr ""
 
-#: app/item_types.py:141 app/item_types.py:171
+#: app/item_types.py:143 app/item_types.py:174
 msgid "ISBN-13"
 msgstr ""
 
-#: app/item_types.py:155
+#: app/item_types.py:158
 msgctxt "tab-book"
 msgid "Main"
 msgstr ""
 
-#: app/item_types.py:157 app/item_types.py:243 app/item_types.py:319
-#: app/item_types.py:407 app/item_types.py:483 app/item_types.py:558
+#: app/item_types.py:160 app/item_types.py:246 app/item_types.py:322
+#: app/item_types.py:411 app/item_types.py:488 app/item_types.py:563
 msgid "Description"
 msgstr ""
 
-#: app/item_types.py:160
+#: app/item_types.py:163
 msgid "Series Title"
 msgstr ""
 
-#: app/item_types.py:161
+#: app/item_types.py:164
 msgid "Volume Number"
 msgstr ""
 
-#: app/item_types.py:162 app/item_types.py:633
+#: app/item_types.py:165 app/item_types.py:638
 msgid "Authors"
 msgstr ""
 
-#: app/item_types.py:163 app/item_types.py:410 app/item_types.py:486
-#: app/item_types.py:564
+#: app/item_types.py:166 app/item_types.py:414 app/item_types.py:491
+#: app/item_types.py:569
 msgid "Publisher"
 msgstr ""
 
-#: app/item_types.py:164 app/item_types.py:411 app/item_types.py:487
+#: app/item_types.py:167 app/item_types.py:415 app/item_types.py:492
 msgid "Publication Date"
 msgstr ""
 
-#: app/item_types.py:165 app/item_types.py:412 app/item_types.py:488
-#: app/item_types.py:566
+#: app/item_types.py:168 app/item_types.py:416 app/item_types.py:493
+#: app/item_types.py:571
 msgid "Place of Publication"
 msgstr ""
 
-#: app/item_types.py:166
+#: app/item_types.py:169
 msgid "Edition"
 msgstr ""
 
-#: app/item_types.py:167 app/item_types.py:251 app/item_types.py:342
-#: app/item_types.py:416 app/item_types.py:492
+#: app/item_types.py:170 app/item_types.py:254 app/item_types.py:345
+#: app/item_types.py:420 app/item_types.py:497
 msgid "Categories"
 msgstr ""
 
-#: app/item_types.py:168 app/item_types.py:252 app/item_types.py:343
-#: app/item_types.py:417 app/item_types.py:493 app/item_types.py:568
+#: app/item_types.py:171 app/item_types.py:255 app/item_types.py:346
+#: app/item_types.py:421 app/item_types.py:498 app/item_types.py:573
 #: app/templates/base.html:23
 msgid "Language"
 msgstr ""
 
-#: app/item_types.py:169
+#: app/item_types.py:172
 msgid "Target Audience"
 msgstr ""
 
-#: app/item_types.py:170
+#: app/item_types.py:173
 msgid "ISBN-10"
 msgstr ""
 
-#: app/item_types.py:172
+#: app/item_types.py:175
 msgid "Book Binding Type"
 msgstr ""
 
-#: app/item_types.py:173 app/item_types.py:189 app/item_types.py:253
-#: app/item_types.py:273 app/item_types.py:345 app/item_types.py:361
-#: app/item_types.py:419 app/item_types.py:435 app/item_types.py:495
-#: app/item_types.py:511 app/item_types.py:569 app/item_types.py:584
-#: app/item_types.py:639 app/item_types.py:688
+#: app/item_types.py:176 app/item_types.py:192 app/item_types.py:256
+#: app/item_types.py:276 app/item_types.py:348 app/item_types.py:364
+#: app/item_types.py:423 app/item_types.py:439 app/item_types.py:500
+#: app/item_types.py:516 app/item_types.py:574 app/item_types.py:589
+#: app/item_types.py:644 app/item_types.py:693
 msgid "Location"
 msgstr ""
 
-#: app/item_types.py:174 app/item_types.py:420 app/item_types.py:496
+#: app/item_types.py:177 app/item_types.py:424 app/item_types.py:501
 msgid "Call Number"
 msgstr ""
 
-#: app/item_types.py:181
+#: app/item_types.py:184
 msgctxt "tab-book"
 msgid "Holdings"
 msgstr ""
 
-#: app/item_types.py:188 app/item_types.py:272 app/item_types.py:360
-#: app/item_types.py:434 app/item_types.py:510 app/item_types.py:583
+#: app/item_types.py:191 app/item_types.py:275 app/item_types.py:363
+#: app/item_types.py:438 app/item_types.py:515 app/item_types.py:588
 msgid "Barcode"
 msgstr ""
 
-#: app/item_types.py:190 app/item_types.py:207
+#: app/item_types.py:193 app/item_types.py:210
 msgid "Originality"
 msgstr ""
 
-#: app/item_types.py:191 app/item_types.py:208
+#: app/item_types.py:194 app/item_types.py:211
 msgid "Condition"
 msgstr ""
 
-#: app/item_types.py:192 app/item_types.py:274 app/item_types.py:362
-#: app/item_types.py:436 app/item_types.py:512 app/item_types.py:585
+#: app/item_types.py:195 app/item_types.py:277 app/item_types.py:365
+#: app/item_types.py:440 app/item_types.py:517 app/item_types.py:590
 msgid "Status"
 msgstr ""
 
-#: app/item_types.py:193 app/item_types.py:275 app/item_types.py:363
-#: app/item_types.py:437 app/item_types.py:513 app/item_types.py:586
-#: app/item_types.py:678
+#: app/item_types.py:196 app/item_types.py:278 app/item_types.py:366
+#: app/item_types.py:441 app/item_types.py:518 app/item_types.py:591
+#: app/item_types.py:683
 msgid "Notes"
 msgstr ""
 
-#: app/item_types.py:201
+#: app/item_types.py:204
 msgctxt "tab-book"
 msgid "Details"
 msgstr ""
 
-#: app/item_types.py:205 app/item_types.py:449 app/item_types.py:527
+#: app/item_types.py:208 app/item_types.py:453 app/item_types.py:532
 msgid "LC Control Number"
 msgstr ""
 
-#: app/item_types.py:206
+#: app/item_types.py:209
 msgid "Dewey Class Number"
 msgstr ""
 
-#: app/item_types.py:209 app/item_types.py:290 app/item_types.py:377
-#: app/item_types.py:453 app/item_types.py:529 app/item_types.py:601
-#: app/item_types.py:697
+#: app/item_types.py:212 app/item_types.py:293 app/item_types.py:380
+#: app/item_types.py:457 app/item_types.py:534 app/item_types.py:606
+#: app/item_types.py:702
 msgid "Accession Number"
 msgstr ""
 
-#: app/item_types.py:210
+#: app/item_types.py:213
 msgid "Origin"
 msgstr ""
 
-#: app/item_types.py:211
+#: app/item_types.py:214
 msgid "Reform Date"
 msgstr ""
 
-#: app/item_types.py:212
+#: app/item_types.py:215
 msgid "Purchase Date"
 msgstr ""
 
-#: app/item_types.py:213 app/item_types.py:288 app/item_types.py:375
-#: app/item_types.py:450 app/item_types.py:525 app/item_types.py:599
+#: app/item_types.py:216 app/item_types.py:291 app/item_types.py:378
+#: app/item_types.py:454 app/item_types.py:530 app/item_types.py:604
 msgid "Price"
 msgstr ""
 
-#: app/item_types.py:214 app/item_types.py:289 app/item_types.py:376
-#: app/item_types.py:451 app/item_types.py:526 app/item_types.py:600
+#: app/item_types.py:217 app/item_types.py:292 app/item_types.py:379
+#: app/item_types.py:455 app/item_types.py:531 app/item_types.py:605
 msgid "Monetary Units"
 msgstr ""
 
-#: app/item_types.py:215 app/item_types.py:291 app/item_types.py:378
-#: app/item_types.py:454 app/item_types.py:530 app/item_types.py:602
+#: app/item_types.py:218 app/item_types.py:294 app/item_types.py:381
+#: app/item_types.py:458 app/item_types.py:535 app/item_types.py:607
 msgid "Keywords"
 msgstr ""
 
-#: app/item_types.py:230
+#: app/item_types.py:233
 msgctxt "item-type"
 msgid "DVD"
 msgstr ""
 
-#: app/item_types.py:231
+#: app/item_types.py:234
 msgctxt "item-type"
 msgid "DVDs"
 msgstr ""
 
-#: app/item_types.py:236 app/item_types.py:287 app/item_types.py:551
-#: app/item_types.py:598
+#: app/item_types.py:239 app/item_types.py:290 app/item_types.py:556
+#: app/item_types.py:603
 msgid "UPC"
 msgstr ""
 
-#: app/item_types.py:241
+#: app/item_types.py:244
 msgctxt "tab-dvd"
 msgid "Main"
 msgstr ""
 
-#: app/item_types.py:246 app/item_types.py:337
+#: app/item_types.py:249 app/item_types.py:340
 msgid "Format"
 msgstr ""
 
-#: app/item_types.py:247
+#: app/item_types.py:250
 msgid "Studio"
 msgstr ""
 
-#: app/item_types.py:248 app/item_types.py:339 app/item_types.py:565
+#: app/item_types.py:251 app/item_types.py:342 app/item_types.py:570
 msgid "Release Date"
 msgstr ""
 
-#: app/item_types.py:249 app/item_types.py:340
+#: app/item_types.py:252 app/item_types.py:343
 msgid "Number of Discs"
 msgstr ""
 
-#: app/item_types.py:250 app/item_types.py:341
+#: app/item_types.py:253 app/item_types.py:344
 msgid "Runtime"
 msgstr ""
 
-#: app/item_types.py:254
+#: app/item_types.py:257
 msgid "Rating"
 msgstr ""
 
-#: app/item_types.py:255
+#: app/item_types.py:258
 msgid "Region"
 msgstr ""
 
-#: app/item_types.py:256
+#: app/item_types.py:259
 msgid "Aspect Ratio"
 msgstr ""
 
-#: app/item_types.py:257
+#: app/item_types.py:260
 msgid "Director"
 msgstr ""
 
-#: app/item_types.py:258
+#: app/item_types.py:261
 msgid "Actors"
 msgstr ""
 
-#: app/item_types.py:265
+#: app/item_types.py:268
 msgctxt "tab-dvd"
 msgid "Holdings"
 msgstr ""
 
-#: app/item_types.py:283
+#: app/item_types.py:286
 msgctxt "tab-dvd"
 msgid "Details"
 msgstr ""
 
-#: app/item_types.py:306
+#: app/item_types.py:309
 msgctxt "item-type"
 msgid "Music CD"
 msgstr ""
 
-#: app/item_types.py:307
+#: app/item_types.py:310
 msgctxt "item-type"
 msgid "Music CDs"
 msgstr ""
 
-#: app/item_types.py:312 app/item_types.py:344
+#: app/item_types.py:315 app/item_types.py:347
 msgid "Catalogue Number"
 msgstr ""
 
-#: app/item_types.py:317
+#: app/item_types.py:320
 msgctxt "tab-cd"
 msgid "Main"
 msgstr ""
 
-#: app/item_types.py:321
+#: app/item_types.py:324
 msgid "Track Listing"
 msgstr ""
 
-#: app/item_types.py:326
+#: app/item_types.py:329
 msgid "Title"
 msgstr ""
 
-#: app/item_types.py:327
+#: app/item_types.py:330
 msgid "Length"
 msgstr ""
 
-#: app/item_types.py:328
+#: app/item_types.py:331
 msgid "Composer"
 msgstr ""
 
-#: app/item_types.py:332
+#: app/item_types.py:335
 msgid "Disc"
 msgstr ""
 
-#: app/item_types.py:336
+#: app/item_types.py:339
 msgid "Artist"
 msgstr ""
 
-#: app/item_types.py:338
+#: app/item_types.py:341
 msgid "Recording Label"
 msgstr ""
 
-#: app/item_types.py:346
+#: app/item_types.py:349
 msgid "Audio"
 msgstr ""
 
-#: app/item_types.py:353
+#: app/item_types.py:356
 msgctxt "tab-cd"
 msgid "Holdings"
 msgstr ""
 
-#: app/item_types.py:371
+#: app/item_types.py:374
 msgctxt "tab-cd"
 msgid "Details"
 msgstr ""
 
-#: app/item_types.py:393
+#: app/item_types.py:396
 msgctxt "item-type"
 msgid "Journal"
 msgstr ""
 
-#: app/item_types.py:394
+#: app/item_types.py:397
 msgctxt "item-type"
 msgid "Journals"
 msgstr ""
 
-#: app/item_types.py:399 app/item_types.py:418 app/item_types.py:475
-#: app/item_types.py:494
+#: app/item_types.py:402 app/item_types.py:422 app/item_types.py:479
+#: app/item_types.py:499
 msgid "ISSN"
 msgstr ""
 
-#: app/item_types.py:405
+#: app/item_types.py:409
 msgctxt "tab-journal"
 msgid "Main"
 msgstr ""
 
-#: app/item_types.py:413 app/item_types.py:489
+#: app/item_types.py:417 app/item_types.py:494
 msgid "Issue Number"
 msgstr ""
 
-#: app/item_types.py:414 app/item_types.py:490
+#: app/item_types.py:418 app/item_types.py:495
 msgid "Volume"
 msgstr ""
 
-#: app/item_types.py:415 app/item_types.py:491
+#: app/item_types.py:419 app/item_types.py:496
 msgid "Issue"
 msgstr ""
 
-#: app/item_types.py:427
+#: app/item_types.py:431
 msgctxt "tab-journal"
 msgid "Holdings"
 msgstr ""
 
-#: app/item_types.py:445
+#: app/item_types.py:449
 msgctxt "tab-journal"
 msgid "Details"
 msgstr ""
 
-#: app/item_types.py:452 app/item_types.py:528
+#: app/item_types.py:456 app/item_types.py:533
 msgid "Dewey Number"
 msgstr ""
 
-#: app/item_types.py:469
+#: app/item_types.py:473
 msgctxt "item-type"
 msgid "Magazine"
 msgstr ""
 
-#: app/item_types.py:470
+#: app/item_types.py:474
 msgctxt "item-type"
 msgid "Magazines"
 msgstr ""
 
-#: app/item_types.py:481
+#: app/item_types.py:486
 msgctxt "tab-magazine"
 msgid "Main"
 msgstr ""
 
-#: app/item_types.py:503
+#: app/item_types.py:508
 msgctxt "tab-magazine"
 msgid "Holdings"
 msgstr ""
 
-#: app/item_types.py:521
+#: app/item_types.py:526
 msgctxt "tab-magazine"
 msgid "Details"
 msgstr ""
 
-#: app/item_types.py:545
+#: app/item_types.py:550
 msgctxt "item-type"
 msgid "Video Game"
 msgstr ""
 
-#: app/item_types.py:546
+#: app/item_types.py:551
 msgctxt "item-type"
 msgid "Video Games"
 msgstr ""
 
-#: app/item_types.py:556
+#: app/item_types.py:561
 msgctxt "tab-videogame"
 msgid "Main"
 msgstr ""
 
-#: app/item_types.py:561
+#: app/item_types.py:566
 msgid "Game Rating"
 msgstr ""
 
-#: app/item_types.py:562
+#: app/item_types.py:567
 msgid "Platform"
 msgstr ""
 
-#: app/item_types.py:563
+#: app/item_types.py:568
 msgid "Mode"
 msgstr ""
 
-#: app/item_types.py:567
+#: app/item_types.py:572
 msgid "Genres"
 msgstr ""
 
-#: app/item_types.py:576
+#: app/item_types.py:581
 msgctxt "tab-videogame"
 msgid "Holdings"
 msgstr ""
 
-#: app/item_types.py:594
+#: app/item_types.py:599
 msgctxt "tab-videogame"
 msgid "Details"
 msgstr ""
 
-#: app/item_types.py:617 app/item_types.py:618
+#: app/item_types.py:622 app/item_types.py:623
 msgctxt "item-type"
 msgid "Grey Literature"
 msgstr ""
 
-#: app/item_types.py:623 app/item_types.py:636
+#: app/item_types.py:628 app/item_types.py:641
 msgid "Document ID"
 msgstr ""
 
-#: app/item_types.py:629
+#: app/item_types.py:634
 msgctxt "tab-greyliterature"
 msgid "Main"
 msgstr ""
 
-#: app/item_types.py:634
+#: app/item_types.py:639
 msgid "Clients"
 msgstr ""
 
-#: app/item_types.py:635
+#: app/item_types.py:640
 msgid "Document Date"
 msgstr ""
 
-#: app/item_types.py:637
+#: app/item_types.py:642
 msgid "Document Type"
 msgstr ""
 
-#: app/item_types.py:638
+#: app/item_types.py:643
 msgid "Job Number"
 msgstr ""
 
-#: app/item_types.py:647
+#: app/item_types.py:652
 msgctxt "tab-greyliterature"
 msgid "Details"
 msgstr ""
 
-#: app/item_types.py:651
+#: app/item_types.py:656
 msgid "Document code A"
 msgstr ""
 
-#: app/item_types.py:652
+#: app/item_types.py:657
 msgid "Document code B"
 msgstr ""
 
-#: app/item_types.py:653
+#: app/item_types.py:658
 msgid "Document Status"
 msgstr ""
 
-#: app/item_types.py:660
+#: app/item_types.py:665
 msgctxt "tab-greyliterature"
 msgid "Notes"
 msgstr ""
 
-#: app/item_types.py:670
+#: app/item_types.py:675
 msgctxt "item-type"
 msgid "Photograph Collection"
 msgstr ""
 
-#: app/item_types.py:671
+#: app/item_types.py:676
 msgctxt "item-type"
 msgid "Photograph Collections"
 msgstr ""
 
-#: app/item_types.py:675 app/item_types.py:687
+#: app/item_types.py:680 app/item_types.py:692
 msgid "ID"
 msgstr ""
 
-#: app/item_types.py:678 app/item_types.py:684
+#: app/item_types.py:683 app/item_types.py:689
 msgid "About"
 msgstr ""
 
-#: app/item_types.py:682
+#: app/item_types.py:687
 msgctxt "tab-photograph"
 msgid "Main"
 msgstr ""
 
-#: app/item_types.py:696
+#: app/item_types.py:701
 msgctxt "tab-photograph"
 msgid "Details"
 msgstr ""
 
-#: app/item_types.py:701
+#: app/item_types.py:706
 msgctxt "tab-photograph"
 msgid "Notes"
 msgstr ""
 
-#: app/item_types.py:763
+#: app/item_types.py:768
 msgctxt "tab-default"
 msgid "Main"
 msgstr ""
@@ -623,35 +643,35 @@ msgstr ""
 msgid "Back cover of %(title)s"
 msgstr ""
 
-#: app/templates/item.html:17
+#: app/templates/item.html:18
 #, python-format
 msgid "%(count)s copy owned"
 msgid_plural "%(count)s copies owned"
 msgstr[0] ""
 msgstr[1] ""
 
-#: app/templates/item.html:19
+#: app/templates/item.html:20
 #, python-format
 msgid "Available: %(available)s of %(total)s"
 msgstr ""
 
-#: app/templates/item.html:21
+#: app/templates/item.html:22
 #, python-format
 msgid "All %(count)s copy is checked out"
 msgid_plural "All %(count)s copies are checked out"
 msgstr[0] ""
 msgstr[1] ""
 
-#: app/templates/item.html:27
+#: app/templates/item.html:28
 msgctxt "aria-label"
 msgid "Item sections"
 msgstr ""
 
-#: app/templates/item.html:35
+#: app/templates/item.html:36
 msgid "This section could not be loaded."
 msgstr ""
 
-#: app/templates/item.html:37
+#: app/templates/item.html:38
 #, python-format
 msgid "Show %(label)s"
 msgstr ""
