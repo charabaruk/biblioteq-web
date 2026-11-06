@@ -194,6 +194,9 @@ def _select_sql(spec: ItemType, n_terms: int, location: str | None = None) -> st
     return (
         f"SELECT '{spec.key}' AS type, {quote(spec.pk)} AS id, {_text(spec.title)} AS title, "
         f"{_text(spec.creator)} AS creator, {_text(spec.identifier)} AS identifier, "
+        f"{_text(spec.issue[0] if spec.issue else None)} AS issue_display, "
+        f"{_text(spec.issue[1] if spec.issue else None)} AS issue_volume, "
+        f"{_text(spec.issue[2] if spec.issue else None)} AS issue_number, "
         f"{_flag(spec.front_cover)} AS has_cover "
         f"FROM {quote(spec.table)}" + _where_sql(spec, n_terms, location)
     )

@@ -103,6 +103,7 @@ class ItemType:
     creator: str | None = None
     identifier: str | None = None  # primary identifier shown on cards (ISBN, ISSN, ...)
     identifier_label: DisplayText | None = None  # display label for primary identifier
+    issue: tuple[str, str, str] | None = None  # (display number, volume, issue) columns
     search_columns: tuple[str, ...] = ()
     detail_fields: tuple[tuple[str, DisplayText], ...] = ()  # (column, label)
     text_fields: tuple[tuple[str, DisplayText], ...] = ()  # prose fields
@@ -396,6 +397,7 @@ ITEM_TYPES: tuple[ItemType, ...] = (
         creator="publisher",
         identifier="id",
         identifier_label=_("ISSN"),
+        issue=("display_number", "issuevolume", "issueno"),
         search_columns=("title", "id", "publisher", "category", "keyword"),
         tabs=(
             TabSpec(
@@ -471,6 +473,7 @@ ITEM_TYPES: tuple[ItemType, ...] = (
         creator="publisher",
         identifier="id",
         identifier_label=_("ISSN"),
+        issue=("display_number", "issuevolume", "issueno"),
         search_columns=("title", "id", "publisher", "category", "keyword"),
         tabs=(
             TabSpec(
@@ -776,6 +779,7 @@ def resolve(
         spec,
         creator=keep(spec.creator),
         identifier=keep(spec.identifier),
+        issue=spec.issue if spec.issue and all(c in columns for c in spec.issue) else None,
         search_columns=tuple(c for c in spec.search_columns if c in columns),
         detail_fields=tuple(f for f in spec.detail_fields if f[0] in columns),
         text_fields=tuple(f for f in spec.text_fields if f[0] in columns),

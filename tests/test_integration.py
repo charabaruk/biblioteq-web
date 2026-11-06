@@ -10,6 +10,14 @@ def test_home_lists_recent(client):
     assert "Dune" in r.text
 
 
+def test_periodical_cards_show_issue(client):
+    r = client.get("/browse/journal")
+    assert "Issue 42" in r.text
+    assert "Issue -1" not in r.text
+    assert "Vol. 0" not in r.text
+    assert "Issue " not in client.get("/browse/book").text
+
+
 def test_search_matches_title_and_author(client):
     assert "Dune" in client.get("/search", params={"q": "dune"}).text
     assert "Frank Herbert" in client.get("/search", params={"q": "herbert"}).text
