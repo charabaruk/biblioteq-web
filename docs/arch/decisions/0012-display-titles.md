@@ -1,6 +1,6 @@
 # ADR-0012: Page title, display title and subtitle
 
-- Status: Accepted
+- Status: Accepted (volume and issue handling updated by ADR-0013)
 - Date: 2026-11-06
 
 ## Context
