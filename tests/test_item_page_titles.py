@@ -29,3 +29,25 @@ def test_book_with_series_only_shows_the_series(client):
 
 def test_book_without_series_has_no_subtitle(client):
     assert 'class="subtitle"' not in client.get("/item/book/3").text
+
+
+def test_repeated_issue_number_is_shown_once(client):
+    html = client.get("/item/journal/3").text
+    assert "<title>Repeated Journal Number 7 - " in html
+    assert "<h1>Repeated Journal Number 7</h1>" in html
+    assert "<dt>Issue Number</dt><dd>7</dd>" in html
+    assert "<dt>Volume</dt>" not in html
+    assert "<dt>Issue</dt>" not in html
+
+
+def test_issue_without_display_number_becomes_the_display_number(client):
+    html = client.get("/item/journal/4").text
+    assert "<h1>Issue Only Journal Number 8</h1>" in html
+    assert "<dt>Issue Number</dt><dd>8</dd>" in html
+    assert "<dt>Issue</dt>" not in html
+
+
+def test_cards_use_the_normalised_numbers(client):
+    html = client.get("/browse/journal").text
+    assert "Issue 7" in html and "Issue 8" in html
+    assert "Vol. 0" not in html

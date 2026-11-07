@@ -1,8 +1,9 @@
-"""Page title, display title and subtitle of an item page (ADR-0012)."""
+"""Page title, display title and subtitle of an item page (ADR-0012, ADR-0013)."""
 
 from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import datetime
+from typing import NamedTuple
 
 from babel import UnknownLocaleError
 from babel.dates import format_skeleton
@@ -43,6 +44,27 @@ def _clean(value: str | None, empty: str | None = None) -> str | None:
     return None if not stripped or stripped == empty else stripped
 
 
+class IssueNumbers(NamedTuple):
+    """A periodical's display number, volume and issue, with unset values as None."""
+
+    display: str | None
+    volume: str | None
+    issue: str | None
+
+
+def normalize_issue(display: str | None, volume: str | None, issue: str | None) -> IssueNumbers:
+    """Drop the placeholder volume of 0 that repeats or stands in for the display number."""
+    number = _clean(display, EMPTY_DISPLAY_NUMBER)
+    vol = _clean(volume, EMPTY_COUNTER)
+    iss = _clean(issue, EMPTY_COUNTER)
+
+    if vol is None and iss is not None:
+        number = number or iss
+        if iss == number:
+            iss = None
+    return IssueNumbers(number, vol, iss)
+
+
 def _volume_and_issue(
     gettext: Callable[[str], str], volume: str | None, issue: str | None
 ) -> str | None:
@@ -75,9 +97,7 @@ def _month_and_year(published: str | None, language: str) -> str | None:
 def _periodical_texts(
     title: str, values: TitleValues, gettext: Callable[[str], str], language: str
 ) -> ItemTexts:
-    number = _clean(values.display_number, EMPTY_DISPLAY_NUMBER)
-    volume = _clean(values.volume, EMPTY_COUNTER)
-    issue = _clean(values.issue, EMPTY_COUNTER)
+    number, volume, issue = normalize_issue(values.display_number, values.volume, values.issue)
     counters = _volume_and_issue(gettext, volume, issue)
 
     # With a display number, volume and issue follow in parentheses; without, they trail the title.

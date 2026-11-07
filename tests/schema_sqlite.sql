@@ -71,7 +71,10 @@ VALUES
 INSERT INTO item_borrower (item_oid, type, memberid) VALUES (1, 'Book', 'M1'), (2, 'Book', 'M2');
 INSERT INTO journal (myoid, title, display_number, issueno, issuevolume) VALUES
  (1, 'Hidden Journal Values', -1, 0, 0),
- (2, 'Visible Journal Values', 42, 3, 2025);
+ (2, 'Visible Journal Values', 42, 3, 2025),
+ -- Placeholder volume of 0: issue repeats the display number, or stands in for it.
+ (3, 'Repeated Journal Number', 7, 7, 0),
+ (4, 'Issue Only Journal Number', NULL, 8, 0);
 INSERT INTO magazine (myoid, title, display_number, issueno, issuevolume) VALUES
  (1, 'Hidden Magazine Values', -1, 0, 0),
  (2, 'Visible Magazine Values', 42, 3, 2025);

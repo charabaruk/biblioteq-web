@@ -2,6 +2,7 @@
 
 import logging
 import re
+from collections.abc import Mapping
 from dataclasses import dataclass, field
 from urllib.parse import quote as url_quote
 from urllib.parse import urlencode
@@ -9,7 +10,7 @@ from urllib.parse import urlencode
 from natsort import natsort_keygen, ns
 from sqlalchemy import Connection, text
 
-from app.item_titles import TitleValues
+from app.item_titles import TitleValues, normalize_issue
 from app.item_types import (
     ITEM_TYPES,
     FieldsSection,
@@ -204,6 +205,15 @@ def _select_sql(spec: ItemType, n_terms: int, location: str | None = None) -> st
     )
 
 
+def _card(row: Mapping[str, object]) -> dict:
+    """A card row with the issue numbers normalised (ADR-0013)."""
+    card = dict(row)
+    card["issue_display"], card["issue_volume"], card["issue_number"] = normalize_issue(
+        card["issue_display"], card["issue_volume"], card["issue_number"]
+    )
+    return card
+
+
 def _keys_sql(spec: ItemType, n_terms: int, location: str | None = None) -> str:
     return (
         f"SELECT '{spec.key}' AS type, {quote(spec.pk)} AS id, {_text(spec.title)} AS title "
@@ -249,7 +259,7 @@ def _natural_page(
         marks = ", ".join(f":i{n}" for n in range(len(ids)))
         sql = f"{_select_sql(spec, 0)} WHERE {quote(spec.pk)} IN ({marks})"
         rows = conn.execute(text(sql), {f"i{n}": v for n, v in enumerate(ids)}).mappings()
-        found.update({(r["type"], r["id"]): dict(r) for r in rows})
+        found.update({(r["type"], r["id"]): _card(r) for r in rows})
     conn.rollback()
     items = [found[(r.type, r.id)] for r in window if (r.type, r.id) in found]
     return Page(items, total, page, page_size)
@@ -292,7 +302,7 @@ def search(
         ),
         {**params, "limit": page_size, "offset": (page - 1) * page_size},
     ).mappings()
-    items = [dict(r) for r in rows]
+    items = [_card(r) for r in rows]
     conn.rollback()
     return Page(items, total, page, page_size)
 
@@ -306,7 +316,7 @@ def recent(conn: Connection, spec: ItemType, limit: int, location: str | None = 
         text(f"{_select_sql(spec, 0, location)} ORDER BY {quote(spec.pk)} DESC LIMIT :limit"),
         params,
     ).mappings()
-    items = [dict(r) for r in rows]
+    items = [_card(r) for r in rows]
     conn.rollback()
     return items
 
@@ -491,6 +501,9 @@ def _load_sections(
     conn: Connection, catalog: Catalog, spec: ItemType, tab: TabSpec, item_id: int
 ) -> list[Section]:
     values = _own_values(conn, spec, tab, item_id)
+    if spec.issue and all(column in values for column in spec.issue):
+        numbers = normalize_issue(*(values[column] for column in spec.issue))
+        values.update(zip(spec.issue, (number or "" for number in numbers), strict=True))
     sections: list[Section] = []
     for s in tab.sections:
         if isinstance(s, FieldsSection):

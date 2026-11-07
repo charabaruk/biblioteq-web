@@ -2,7 +2,7 @@
 
 import pytest
 
-from app.item_titles import TitleValues, build_item_texts
+from app.item_titles import IssueNumbers, TitleValues, build_item_texts, normalize_issue
 from app.item_types import ITEM_TYPES
 
 SPECS = {spec.key: spec for spec in ITEM_TYPES}
@@ -25,7 +25,7 @@ def _texts(key, language="en", **values):
         ({"display_number": "42", "volume": "3"}, "Wired 42 (vol. 3)", "Wired 42"),
         ({"display_number": "42"}, "Wired 42", "Wired 42"),
         ({"volume": "3", "issue": "4"}, "Wired vol. 3 no. 4", "Wired vol. 3 no. 4"),
-        ({"issue": "4"}, "Wired no. 4", "Wired no. 4"),
+        ({"issue": "4"}, "Wired 4", "Wired 4"),  # ADR-0013: issue stands in for the display number
         ({"volume": "3"}, "Wired", "Wired"),
         ({}, "Wired", "Wired"),
     ],
@@ -102,3 +102,30 @@ def test_book_subtitle_comes_from_the_series(values, subtitle):
 def test_other_types_keep_the_item_title():
     texts = _texts("dvd", display_number="42", series_title="Ignored")
     assert (texts.page_title, texts.display_title, texts.subtitle) == (TITLE, TITLE, None)
+
+
+@pytest.mark.parametrize(
+    ("display", "volume", "issue", "expected"),
+    [
+        ("-1", "0", "8", ("8", None, None)),
+        (None, "0", "8", ("8", None, None)),
+        ("7", "0", "7", ("7", None, None)),
+        ("7", "0", "8", ("7", None, "8")),
+        ("7", "2", "7", ("7", "2", "7")),
+        ("-1", "2", "8", (None, "2", "8")),
+        ("-1", "0", "0", (None, None, None)),
+        ("42", "0", "0", ("42", None, None)),
+    ],
+)
+def test_placeholder_volume_and_issue_are_normalised(display, volume, issue, expected):
+    assert normalize_issue(display, volume, issue) == IssueNumbers(*expected)
+
+
+def test_titles_use_the_normalised_numbers():
+    repeated = _texts("journal", display_number="7", volume="0", issue="7", published="03/15/2024")
+    assert (repeated.page_title, repeated.display_title) == ("Wired 7", "Wired 7")
+    assert repeated.subtitle == "March 2024"
+
+    issue_only = _texts("journal", display_number="-1", volume="0", issue="8")
+    assert (issue_only.page_title, issue_only.display_title) == ("Wired 8", "Wired 8")
+    assert issue_only.subtitle is None
