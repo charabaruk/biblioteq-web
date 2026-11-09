@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: biblioteq-web 0.3.0\n"
 "Report-Msgid-Bugs-To: https://github.com/charabaruk/biblioteq-web/issues\n"
-"POT-Creation-Date: 2026-11-09 08:04-0500\n"
+"POT-Creation-Date: 2026-11-09 08:20-0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -577,26 +577,38 @@ msgctxt "aria-label"
 msgid "Search"
 msgstr ""
 
-#: app/templates/base.html:27
+#: app/templates/base.html:27 app/templates/browse.html:14
 msgid "Apply"
 msgstr ""
 
-#: app/templates/browse.html:8 app/templates/location.html:3
+#: app/templates/browse.html:8
+msgid "Issue order"
+msgstr ""
+
+#: app/templates/browse.html:10
+msgid "Oldest first"
+msgstr ""
+
+#: app/templates/browse.html:11
+msgid "Newest first"
+msgstr ""
+
+#: app/templates/browse.html:19 app/templates/location.html:3
 #: app/templates/location.html:5
 msgid "Unknown location"
 msgstr ""
 
-#: app/templates/browse.html:8 app/templates/location.html:3
+#: app/templates/browse.html:19 app/templates/location.html:3
 #: app/templates/location.html:5
 #, python-format
 msgid "Location: %(name)s"
 msgstr ""
 
-#: app/templates/browse.html:9
+#: app/templates/browse.html:20
 msgid "Clear filter"
 msgstr ""
 
-#: app/templates/browse.html:13
+#: app/templates/browse.html:24
 #, python-format
 msgid "%(count)s item"
 msgid_plural "%(count)s items"

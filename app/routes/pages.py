@@ -1,7 +1,7 @@
 """HTML pages: home, search, browse and item detail."""
 
 import gettext
-from typing import Annotated
+from typing import Annotated, Literal
 from urllib.parse import urlencode, urlsplit
 
 from fastapi import APIRouter, Depends, HTTPException, Path, Query, Request
@@ -22,6 +22,7 @@ router = APIRouter()
 ItemId = Annotated[int, Path(ge=0, le=2**63 - 1)]
 PageNo = Annotated[int, Query(ge=1, le=100000)]
 LocationFilter = Annotated[str, Query(max_length=500)]
+SortDirection = Literal["asc", "desc"]
 HOME_RECENT = 6
 
 
@@ -158,6 +159,7 @@ def browse(
     request: Request,
     type_key: str,
     location: LocationFilter = "",
+    sort: Annotated[SortDirection, Query()] = "asc",
     page: PageNo = 1,
     conn: Connection = Depends(get_conn),
     catalog: Catalog = Depends(get_localized_catalog),
@@ -173,7 +175,11 @@ def browse(
         settings.page_size,
         settings.title_sort,
         location or None,
+        issue_direction=sort if spec.issue else None,
     )
+    pager_params = {"sort": sort} if spec.issue else {}
+    if location:
+        pager_params["location"] = location
     return templates.TemplateResponse(
         request,
         "browse.html",
@@ -181,9 +187,9 @@ def browse(
             "types": catalog.types.values(),
             "spec": spec,
             "location": location,
+            "sort_direction": sort,
             "result": result,
-            "pager": f"/browse/{spec.key}?"
-            + (urlencode({"location": location}) if location else ""),
+            "pager": f"/browse/{spec.key}?" + urlencode(pager_params),
             "type_labels": {k: v.label for k, v in catalog.types.items()},
         },
     )

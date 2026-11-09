@@ -549,6 +549,18 @@ msgstr "Recherche"
 msgid "Apply"
 msgstr "Appliquer"
 
+#: app/templates/browse.html:8
+msgid "Issue order"
+msgstr "Ordre des numéros"
+
+#: app/templates/browse.html:10
+msgid "Oldest first"
+msgstr "Du plus ancien au plus récent"
+
+#: app/templates/browse.html:11
+msgid "Newest first"
+msgstr "Du plus récent au plus ancien"
+
 #: app/templates/browse.html:8 app/templates/location.html:3
 #: app/templates/location.html:5
 msgid "Unknown location"

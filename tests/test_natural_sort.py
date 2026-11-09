@@ -2,12 +2,20 @@ import sqlite3
 from pathlib import Path
 
 import pytest
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
 
 from app import repository
 from app.repository import title_sort_key
 
 SCHEMA = Path(__file__).parent / "schema_sqlite.sql"
+PERIODICAL_ROWS = [
+    (5, "A Periodical", 1, 1, 1, "2024-01-01"),
+    (10, "Same Periodical", 2, 1, 2, "2023-01-01"),
+    (11, "Same Periodical", 1, 1, 10, "2022-01-01"),
+    (12, "Same Periodical", 1, 2, 1, "2020-01-01"),
+    (13, "Same Periodical", 1, 1, 2, "2024-01-01"),
+    (14, "Same Periodical", 1, 1, 2, "12/31/2023"),
+]
 
 
 def _ordered(titles, numbers):
@@ -44,10 +52,19 @@ def conn_and_catalog(tmp_path):
     with sqlite3.connect(path) as db:
         db.executescript(SCHEMA.read_text())
         db.execute("DELETE FROM book")
+        db.execute("DELETE FROM journal")
+        db.execute("DELETE FROM magazine")
         db.executemany(
             "INSERT INTO book (title, quantity) VALUES (?, 1)",
             [("Vol 10",), ("Vol 2",), ("Vol 1",), ("vol 3",)],
         )
+        for table in ("journal", "magazine"):
+            db.executemany(
+                f"INSERT INTO {table} "
+                "(myoid, title, issuevolume, issueno, display_number, pdate) "
+                "VALUES (?, ?, ?, ?, ?, ?)",
+                PERIODICAL_ROWS,
+            )
     engine = create_engine(f"sqlite:///{path}")
     with engine.connect() as conn:
         yield conn, repository.load_catalog(conn, "public")
@@ -56,6 +73,60 @@ def conn_and_catalog(tmp_path):
 
 def _titles(page):
     return [i["title"] for i in page.items]
+
+
+@pytest.mark.parametrize("type_key", ["journal", "magazine"])
+@pytest.mark.parametrize("natural", [None, "integer"])
+@pytest.mark.parametrize(
+    ("direction", "expected_ids"),
+    [
+        ("asc", [5, 14, 13, 11, 12, 10]),
+        ("desc", [5, 10, 12, 11, 13, 14]),
+    ],
+)
+def test_periodical_ordering(conn_and_catalog, type_key, natural, direction, expected_ids):
+    conn, catalog = conn_and_catalog
+    page = repository.search(
+        conn,
+        catalog,
+        "",
+        [type_key],
+        1,
+        10,
+        natural,
+        issue_direction=direction,
+    )
+    assert [item["id"] for item in page.items] == expected_ids
+
+
+def test_periodical_pagination_follows_issue_order(conn_and_catalog):
+    conn, catalog = conn_and_catalog
+    first = repository.search(
+        conn, catalog, "", ["journal"], 1, 3, issue_direction="asc"
+    )
+    second = repository.search(
+        conn, catalog, "", ["journal"], 2, 3, issue_direction="asc"
+    )
+    assert [item["id"] for item in first.items] == [5, 14, 13]
+    assert [item["id"] for item in second.items] == [11, 12, 10]
+
+
+@pytest.mark.parametrize(
+    ("direction", "expected_ids"),
+    [
+        ("asc", [5, 13, 14, 11, 12, 10]),
+        ("desc", [5, 10, 12, 11, 14, 13]),
+    ],
+)
+def test_periodical_null_date_order_uses_database_default(
+    conn_and_catalog, direction, expected_ids
+):
+    conn, catalog = conn_and_catalog
+    conn.execute(text("UPDATE journal SET pdate = NULL WHERE myoid = 13"))
+    page = repository.search(
+        conn, catalog, "", ["journal"], 1, 10, issue_direction=direction
+    )
+    assert [item["id"] for item in page.items] == expected_ids
 
 
 def test_search_orders_naturally(conn_and_catalog):

@@ -4,13 +4,15 @@ import logging
 import re
 from collections.abc import Mapping
 from dataclasses import dataclass, field
+from datetime import datetime
+from functools import cmp_to_key
 from urllib.parse import quote as url_quote
 from urllib.parse import urlencode
 
 from natsort import natsort_keygen, ns
 from sqlalchemy import Connection, text
 
-from app.item_titles import TitleValues, normalize_issue
+from app.item_titles import PUBLICATION_DATE_FORMATS, TitleValues, normalize_issue
 from app.item_types import (
     ITEM_TYPES,
     FieldsSection,
@@ -214,9 +216,20 @@ def _card(row: Mapping[str, object]) -> dict:
     return card
 
 
-def _keys_sql(spec: ItemType, n_terms: int, location: str | None = None) -> str:
+def _keys_sql(
+    spec: ItemType,
+    n_terms: int,
+    location: str | None = None,
+    sort_columns: tuple[str, ...] = (),
+) -> str:
+    sort_keys = ""
+    if sort_columns:
+        sort_keys = ", lower(" + _text(spec.title) + ") AS title_order, " + ", ".join(
+            f"{_text(column)} AS sort_{index}" for index, column in enumerate(sort_columns)
+        )
     return (
-        f"SELECT '{spec.key}' AS type, {quote(spec.pk)} AS id, {_text(spec.title)} AS title "
+        f"SELECT '{spec.key}' AS type, {quote(spec.pk)} AS id, {_text(spec.title)} AS title"
+        f"{sort_keys} "
         f"FROM {quote(spec.table)}" + _where_sql(spec, n_terms, location)
     )
 
@@ -227,6 +240,56 @@ def title_sort_key(numbers: str):
     return lambda title: keygen(title or "")
 
 
+def _periodical_sort_columns(spec: ItemType) -> tuple[str, ...]:
+    if not spec.issue:
+        return ()
+    display_number, volume, issue_number = spec.issue
+    return tuple(
+        column for column in (volume, issue_number, display_number, spec.published) if column
+    )
+
+
+def _periodical_sort_value(column: str, value: str | None, spec: ItemType):
+    if value is None:
+        return None
+    if column == spec.published:
+        for date_format in PUBLICATION_DATE_FORMATS:
+            try:
+                return ("date", datetime.strptime(value, date_format))
+            except ValueError:
+                continue
+        return ("text", value.casefold())
+    return int(value)
+
+
+def _compare_periodical_values(left, right, direction: str, nulls_first: bool) -> int:
+    if left is None or right is None:
+        if left is None and right is None:
+            return 0
+        if left is None:
+            return -1 if nulls_first else 1
+        return 1 if nulls_first else -1
+    comparison = (left > right) - (left < right)
+    return comparison if direction == "asc" else -comparison
+
+
+def _periodical_nulls_first(
+    conn: Connection,
+    spec: ItemType,
+    terms: list[str],
+    params: dict[str, object],
+    location: str | None,
+    column: str,
+    direction: str,
+) -> bool:
+    sql = (
+        f"SELECT {quote(column)} FROM {quote(spec.table)}"
+        + _where_sql(spec, len(terms), location)
+        + f" ORDER BY {quote(column)} {direction.upper()} LIMIT 1"
+    )
+    return conn.execute(text(sql), params).scalar() is None
+
+
 def _natural_page(
     conn: Connection,
     specs: list[ItemType],
@@ -234,16 +297,61 @@ def _natural_page(
     params: dict[str, object],
     page: int,
     page_size: int,
-    numbers: str,
+    numbers: str | None,
     location: str | None = None,
+    issue_direction: str | None = None,
+    sort_columns: tuple[str, ...] = (),
 ) -> Page:
     # Sorting happens here because the database has no portable natural collation.
-    union = " UNION ALL ".join(_keys_sql(s, len(terms), location) for s in specs)
-    key = title_sort_key(numbers)
-    keys = sorted(
-        conn.execute(text(union), params).all(),
-        key=lambda r: (key(r.title), r.type, r.id),
+    union = " UNION ALL ".join(
+        _keys_sql(s, len(terms), location, sort_columns if issue_direction else ())
+        for s in specs
     )
+    title_key = title_sort_key(numbers) if numbers else lambda title: (title or "").lower()
+    rows = conn.execute(text(union), params).all()
+    if issue_direction:
+        spec = specs[0]
+        nulls_first = {}
+        for index, column in enumerate(sort_columns):
+            values = [row._mapping[f"sort_{index}"] for row in rows]
+            if any(value is None for value in values) and any(
+                value is not None for value in values
+            ):
+                nulls_first[index] = _periodical_nulls_first(
+                    conn, spec, terms, params, location, column, issue_direction
+                )
+            else:
+                nulls_first[index] = False
+
+        def compare_rows(left, right):
+            left_title_key = (
+                left._mapping["title_order"] if numbers is None else title_key(left.title)
+            )
+            right_title_key = (
+                right._mapping["title_order"] if numbers is None else title_key(right.title)
+            )
+            title_comparison = (left_title_key > right_title_key) - (
+                left_title_key < right_title_key
+            )
+            if title_comparison:
+                return title_comparison
+            for index, column in enumerate(sort_columns):
+                left_value = _periodical_sort_value(
+                    column, left._mapping[f"sort_{index}"], spec
+                )
+                right_value = _periodical_sort_value(
+                    column, right._mapping[f"sort_{index}"], spec
+                )
+                comparison = _compare_periodical_values(
+                    left_value, right_value, issue_direction, nulls_first[index]
+                )
+                if comparison:
+                    return comparison
+            return (left.id > right.id) - (left.id < right.id)
+
+        keys = sorted(rows, key=cmp_to_key(compare_rows))
+    else:
+        keys = sorted(rows, key=lambda row: (title_key(row.title), row.type, row.id))
     total = len(keys)
     page = max(1, min(page, max(1, -(-total // page_size))))
     window = keys[(page - 1) * page_size : page * page_size]
@@ -274,12 +382,14 @@ def search(
     page_size: int,
     natural: str | None = None,
     location: str | None = None,
+    issue_direction: str | None = None,
 ) -> Page:
     """Search the given types (all available if empty). An empty query lists everything.
 
     `natural` is "integer" or "decimal" to order titles naturally in Python;
     None orders in SQL by lowercased title. `location` keeps items at exactly that
-    location; "UNKNOWN" also keeps items with none.
+    location; "UNKNOWN" also keeps items with none. `issue_direction` enables the
+    registered issue ordering for a periodical browse page.
     """
     specs = [catalog.types[k] for k in type_keys if k in catalog.types] or list(
         catalog.types.values()
@@ -290,6 +400,22 @@ def search(
     params: dict[str, object] = {f"t{i}": _like_pattern(t) for i, t in enumerate(terms)}
     if location is not None:
         params["loc"] = location
+    if issue_direction is not None and issue_direction not in ("asc", "desc"):
+        raise ValueError("issue_direction must be 'asc' or 'desc'")
+    sort_columns = _periodical_sort_columns(specs[0]) if len(specs) == 1 else ()
+    if issue_direction and sort_columns:
+        return _natural_page(
+            conn,
+            specs,
+            terms,
+            params,
+            page,
+            page_size,
+            natural,
+            location,
+            issue_direction,
+            sort_columns,
+        )
     if natural:
         return _natural_page(conn, specs, terms, params, page, page_size, natural, location)
     union = " UNION ALL ".join(_select_sql(s, len(terms), location) for s in specs)

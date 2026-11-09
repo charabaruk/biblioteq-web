@@ -64,6 +64,48 @@ def test_browse_and_pagination(client, monkeypatch):
         config.get_settings.cache_clear()
 
 
+def test_periodical_browse_offers_and_preserves_issue_order(client, monkeypatch):
+    monkeypatch.setenv("BIBLIOTEQ_PAGE_SIZE", "1")
+    from app import config
+
+    config.get_settings.cache_clear()
+    try:
+        default = client.get("/browse/journal")
+        assert '<option value="asc" selected>' in default.text
+        assert "/browse/journal?sort=asc&amp;page=2" in default.text
+
+        descending = client.get(
+            "/browse/journal", params={"sort": "desc", "location": "UNKNOWN"}
+        )
+        assert '<option value="desc" selected>' in descending.text
+        assert '<input type="hidden" name="location" value="UNKNOWN">' in descending.text
+
+        all_descending = client.get("/browse/journal", params={"sort": "desc"})
+        assert "/browse/journal?sort=desc&amp;page=2" in all_descending.text
+        assert 'name="sort"' not in client.get("/browse/book").text
+        assert client.get("/browse/journal", params={"sort": "sideways"}).status_code == 422
+        french = client.get("/browse/journal", headers={"accept-language": "fr"})
+        assert "Ordre des numéros" in french.text
+    finally:
+        config.get_settings.cache_clear()
+
+
+def test_periodical_browse_passes_direction_to_repository(client, monkeypatch):
+    from app import repository
+
+    directions = []
+    original_search = repository.search
+
+    def recording_search(*args, **kwargs):
+        directions.append(kwargs.get("issue_direction"))
+        return original_search(*args, **kwargs)
+
+    monkeypatch.setattr(repository, "search", recording_search)
+    response = client.get("/browse/journal", params={"sort": "desc"})
+    assert response.status_code == 200
+    assert directions == ["desc"]
+
+
 def test_browse_unknown_type_404(client):
     assert client.get("/browse/nope").status_code == 404
 
@@ -202,7 +244,7 @@ def test_location_filter_survives_pagination(client, monkeypatch):
         r = client.get("/search", params={"location": "UNKNOWN"})
         assert "location=UNKNOWN&amp;page=2" in r.text
         r = client.get("/browse/magazine", params={"location": "UNKNOWN"})
-        assert "/browse/magazine?location=UNKNOWN&amp;page=2" in r.text
+        assert "/browse/magazine?sort=asc&amp;location=UNKNOWN&amp;page=2" in r.text
     finally:
         config.get_settings.cache_clear()
 
