@@ -7,7 +7,7 @@
   {% endif %}
   <div class="card-body">
     <div class="card-title">{{ it.title }}</div>
-    {% if it.issue_display and it.issue_display != '-1' %}<div class="card-sub">{% trans num=it.issue_display %}Issue {{ num }}{% endtrans %}</div>
+    {% if it.issue_display and it.issue_display != '-1' %}<div class="card-sub">{% trans num=it.issue_display %}Issue {{ num }}{% endtrans %}{% if it.issue_volume and it.issue_volume != '0' and it.issue_number and it.issue_number != '0' %} ({% trans volume=it.issue_volume, issue=it.issue_number %}vol. {{ volume }} no. {{ issue }}{% endtrans %}){% endif %}</div>
     {% elif it.issue_volume and it.issue_volume != '0' and it.issue_number and it.issue_number != '0' %}<div class="card-sub">{% trans vol=it.issue_volume, iss=it.issue_number %}Vol. {{ vol }} no. {{ iss }}{% endtrans %}</div>{% endif %}
     {% if it.creator %}<div class="card-sub">{{ it.creator }}</div>{% endif %}
     {% if it.identifier %}<div class="card-meta">{{ it.identifier }}</div>{% endif %}

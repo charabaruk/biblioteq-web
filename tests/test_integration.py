@@ -13,6 +13,8 @@ def test_home_lists_recent(client):
 def test_periodical_cards_show_issue(client):
     r = client.get("/browse/journal")
     assert "Issue 42" in r.text
+    assert "Issue 42 (vol. 2025 no. 3)" in r.text
+    assert "Issue 42 (vol. 2025 no. 3)" in client.get("/browse/magazine").text
     assert "Issue -1" not in r.text
     assert "Vol. 0" not in r.text
     assert "Issue " not in client.get("/browse/book").text
