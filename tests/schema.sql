@@ -4,19 +4,19 @@ CREATE TABLE book (
   id text, isbn13 text, title text NOT NULL, author text, publisher text,
   pdate text, place text, edition text, category text, language text,
   quantity integer NOT NULL DEFAULT 1, location text, keyword text, description text,
-  marc_tags text, front_cover bytea, back_cover bytea
+  marc_tags text, front_cover bytea, back_cover bytea, series_title text, volume_number text
 );
 CREATE TABLE item_borrower (
   myoid bigserial PRIMARY KEY, item_oid bigint NOT NULL, type text NOT NULL,
   memberid text, copyid text, reserved_date text, duedate text
 );
 CREATE TABLE journal (
-  myoid bigint PRIMARY KEY, title text NOT NULL, location text,
+  myoid bigint PRIMARY KEY, title text NOT NULL, location text, pdate text,
   display_number integer, issueno integer NOT NULL DEFAULT 0,
   issuevolume integer NOT NULL DEFAULT 0
 );
 CREATE TABLE magazine (
-  myoid bigint PRIMARY KEY, title text NOT NULL, location text,
+  myoid bigint PRIMARY KEY, title text NOT NULL, location text, pdate text,
   display_number integer, issueno integer NOT NULL DEFAULT 0,
   issuevolume integer NOT NULL DEFAULT 0
 );
@@ -76,7 +76,10 @@ VALUES
 INSERT INTO item_borrower (item_oid, type, memberid) VALUES (1, 'Book', 'M1'), (2, 'Book', 'M2');
 INSERT INTO journal (myoid, title, display_number, issueno, issuevolume) VALUES
  (1, 'Hidden Journal Values', -1, 0, 0),
- (2, 'Visible Journal Values', 42, 3, 2025);
+ (2, 'Visible Journal Values', 42, 3, 2025),
+ -- Placeholder volume of 0: issue repeats the display number, or stands in for it.
+ (3, 'Repeated Journal Number', 7, 7, 0),
+ (4, 'Issue Only Journal Number', NULL, 8, 0);
 INSERT INTO magazine (myoid, title, display_number, issueno, issuevolume) VALUES
  (1, 'Hidden Magazine Values', -1, 0, 0),
  (2, 'Visible Magazine Values', 42, 3, 2025);
@@ -95,6 +98,12 @@ UPDATE journal SET location = 'UNKNOWN' WHERE myoid = 2;
 INSERT INTO locations (location, type) VALUES
  ('Shelf A', 'Book'), ('Shelf A', 'Journal'), ('Reading Room', 'Magazine'),
  ('Ghost/Annex', 'Book'), ('shelf a', 'Book');
+
+-- Titles: a series with a volume, a series without one, and dated issues.
+UPDATE book SET series_title = 'Dune Chronicles', volume_number = '1' WHERE isbn13 = '9780441172719';
+UPDATE book SET series_title = 'Hitchhiker Series' WHERE isbn13 = '9780345391803';
+UPDATE journal SET pdate = '03/15/2024' WHERE myoid = 2;
+UPDATE magazine SET pdate = '2024-03-15' WHERE myoid = 2;
 
 -- Placeholder values that must be treated as empty; "N/A Station" is real content.
 UPDATE book SET description = '  N/A  ', edition = 'N/A', place = 'N/A Station'

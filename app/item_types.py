@@ -104,6 +104,8 @@ class ItemType:
     identifier: str | None = None  # primary identifier shown on cards (ISBN, ISSN, ...)
     identifier_label: DisplayText | None = None  # display label for primary identifier
     issue: tuple[str, str, str] | None = None  # (display number, volume, issue) columns
+    published: str | None = None  # column holding the publication or release date
+    series: tuple[str, str] | None = None  # (series title, volume number) columns
     search_columns: tuple[str, ...] = ()
     detail_fields: tuple[tuple[str, DisplayText], ...] = ()  # (column, label)
     text_fields: tuple[tuple[str, DisplayText], ...] = ()  # prose fields
@@ -139,6 +141,8 @@ ITEM_TYPES: tuple[ItemType, ...] = (
         creator="author",
         identifier="isbn13",
         identifier_label=_("ISBN-13"),
+        series=("series_title", "volume_number"),
+        published="pdate",
         search_columns=(
             "title",
             "series_title",
@@ -234,6 +238,7 @@ ITEM_TYPES: tuple[ItemType, ...] = (
         creator="dvddirector",
         identifier="id",
         identifier_label=_("UPC"),
+        published="rdate",
         search_columns=("title", "id", "dvdactor", "dvddirector", "studio", "category", "keyword"),
         tabs=(
             TabSpec(
@@ -310,6 +315,7 @@ ITEM_TYPES: tuple[ItemType, ...] = (
         creator="artist",
         identifier="id",
         identifier_label=_("Catalogue Number"),
+        published="rdate",
         search_columns=("title", "artist", "id", "recording_label", "category"),
         tabs=(
             TabSpec(
@@ -398,6 +404,7 @@ ITEM_TYPES: tuple[ItemType, ...] = (
         identifier="id",
         identifier_label=_("ISSN"),
         issue=("display_number", "issuevolume", "issueno"),
+        published="pdate",
         search_columns=("title", "id", "publisher", "category", "keyword"),
         tabs=(
             TabSpec(
@@ -474,6 +481,7 @@ ITEM_TYPES: tuple[ItemType, ...] = (
         identifier="id",
         identifier_label=_("ISSN"),
         issue=("display_number", "issuevolume", "issueno"),
+        published="pdate",
         search_columns=("title", "id", "publisher", "category", "keyword"),
         tabs=(
             TabSpec(
@@ -549,6 +557,7 @@ ITEM_TYPES: tuple[ItemType, ...] = (
         creator="publisher",
         identifier="id",
         identifier_label=_("UPC"),
+        published="rdate",
         search_columns=("title", "id", "publisher", "genre", "vgplatform", "keyword"),
         tabs=(
             TabSpec(
@@ -621,6 +630,7 @@ ITEM_TYPES: tuple[ItemType, ...] = (
         creator="author",
         identifier="document_id",
         identifier_label=_("Document ID"),
+        published="document_date",
         search_columns=("document_title", "author", "document_id", "client", "job_number", "notes"),
         detail_fields=(),
         tabs=(
@@ -780,6 +790,8 @@ def resolve(
         creator=keep(spec.creator),
         identifier=keep(spec.identifier),
         issue=spec.issue if spec.issue and all(c in columns for c in spec.issue) else None,
+        published=keep(spec.published),
+        series=spec.series if spec.series and all(c in columns for c in spec.series) else None,
         search_columns=tuple(c for c in spec.search_columns if c in columns),
         detail_fields=tuple(f for f in spec.detail_fields if f[0] in columns),
         text_fields=tuple(f for f in spec.text_fields if f[0] in columns),

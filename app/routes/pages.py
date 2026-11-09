@@ -1,5 +1,6 @@
 """HTML pages: home, search, browse and item detail."""
 
+import gettext
 from typing import Annotated
 from urllib.parse import urlencode, urlsplit
 
@@ -11,6 +12,7 @@ from app import repository
 from app.config import get_settings
 from app.db import get_conn
 from app.deps import get_localized_catalog, require_type
+from app.item_titles import ItemTexts, build_item_texts
 from app.locale import LANGUAGE_COOKIE, available_languages
 from app.repository import Catalog
 from app.templating import templates
@@ -36,6 +38,12 @@ def _local_redirect_target(target: str, root_path: str) -> str:
     if root_path and target != root_path and not target.startswith(f"{root_path}/"):
         return f"{root_path}/"
     return target
+
+
+def _item_texts(request: Request, spec, item: repository.Item) -> ItemTexts:
+    translations = getattr(request.state, "translations", gettext.NullTranslations())
+    language = getattr(request.state, "lang", get_settings().default_lang)
+    return build_item_texts(spec, item.title, item.title_values, translations.gettext, language)
 
 
 @router.get("/language")
@@ -194,7 +202,14 @@ def item_detail(
     if item is None:
         raise HTTPException(status_code=404, detail="Item not found")
     return templates.TemplateResponse(
-        request, "item.html", {"types": catalog.types.values(), "item": item, "spec": spec}
+        request,
+        "item.html",
+        {
+            "types": catalog.types.values(),
+            "item": item,
+            "spec": spec,
+            "texts": _item_texts(request, spec, item),
+        },
     )
 
 
@@ -223,7 +238,14 @@ def item_tab(
         if item is None:
             raise HTTPException(status_code=404, detail="Item not found")
         response = templates.TemplateResponse(
-            request, "item.html", {"types": catalog.types.values(), "item": item, "spec": spec}
+            request,
+            "item.html",
+            {
+                "types": catalog.types.values(),
+                "item": item,
+                "spec": spec,
+                "texts": _item_texts(request, spec, item),
+            },
         )
     response.headers["Vary"] = "X-Requested-With"
     return response

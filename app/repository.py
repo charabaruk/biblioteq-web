@@ -2,6 +2,7 @@
 
 import logging
 import re
+from collections.abc import Mapping
 from dataclasses import dataclass, field
 from urllib.parse import quote as url_quote
 from urllib.parse import urlencode
@@ -9,6 +10,7 @@ from urllib.parse import urlencode
 from natsort import natsort_keygen, ns
 from sqlalchemy import Connection, text
 
+from app.item_titles import TitleValues, normalize_issue
 from app.item_types import (
     ITEM_TYPES,
     FieldsSection,
@@ -89,6 +91,7 @@ class Item:
     has_front: bool = False
     has_back: bool = False
     availability: Availability | None = None
+    title_values: TitleValues = field(default_factory=TitleValues)
 
 
 def _columns_by_table(conn: Connection, schema: str) -> dict[str, set[str]]:
@@ -202,6 +205,15 @@ def _select_sql(spec: ItemType, n_terms: int, location: str | None = None) -> st
     )
 
 
+def _card(row: Mapping[str, object]) -> dict:
+    """A card row with the issue numbers normalised (ADR-0013)."""
+    card = dict(row)
+    card["issue_display"], card["issue_volume"], card["issue_number"] = normalize_issue(
+        card["issue_display"], card["issue_volume"], card["issue_number"]
+    )
+    return card
+
+
 def _keys_sql(spec: ItemType, n_terms: int, location: str | None = None) -> str:
     return (
         f"SELECT '{spec.key}' AS type, {quote(spec.pk)} AS id, {_text(spec.title)} AS title "
@@ -247,7 +259,7 @@ def _natural_page(
         marks = ", ".join(f":i{n}" for n in range(len(ids)))
         sql = f"{_select_sql(spec, 0)} WHERE {quote(spec.pk)} IN ({marks})"
         rows = conn.execute(text(sql), {f"i{n}": v for n, v in enumerate(ids)}).mappings()
-        found.update({(r["type"], r["id"]): dict(r) for r in rows})
+        found.update({(r["type"], r["id"]): _card(r) for r in rows})
     conn.rollback()
     items = [found[(r.type, r.id)] for r in window if (r.type, r.id) in found]
     return Page(items, total, page, page_size)
@@ -290,7 +302,7 @@ def search(
         ),
         {**params, "limit": page_size, "offset": (page - 1) * page_size},
     ).mappings()
-    items = [dict(r) for r in rows]
+    items = [_card(r) for r in rows]
     conn.rollback()
     return Page(items, total, page, page_size)
 
@@ -304,7 +316,7 @@ def recent(conn: Connection, spec: ItemType, limit: int, location: str | None = 
         text(f"{_select_sql(spec, 0, location)} ORDER BY {quote(spec.pk)} DESC LIMIT :limit"),
         params,
     ).mappings()
-    items = [dict(r) for r in rows]
+    items = [_card(r) for r in rows]
     conn.rollback()
     return items
 
@@ -489,6 +501,9 @@ def _load_sections(
     conn: Connection, catalog: Catalog, spec: ItemType, tab: TabSpec, item_id: int
 ) -> list[Section]:
     values = _own_values(conn, spec, tab, item_id)
+    if spec.issue and all(column in values for column in spec.issue):
+        numbers = normalize_issue(*(values[column] for column in spec.issue))
+        values.update(zip(spec.issue, (number or "" for number in numbers), strict=True))
     sections: list[Section] = []
     for s in tab.sections:
         if isinstance(s, FieldsSection):
@@ -520,11 +535,19 @@ def get_item(
 ) -> Item | None:
     """Load an item; lazy tabs stay unloaded unless named by `load`."""
     qty = quote(spec.quantity) if spec.quantity else "NULL"
+    display_number, volume, issue = spec.issue or (None, None, None)
+    series_title, volume_number = spec.series or (None, None)
     cols = [
         f"{_text(spec.title)} AS title",
         f"{_flag(spec.front_cover)} AS has_front",
         f"{_flag(spec.back_cover)} AS has_back",
         f"{qty} AS quantity",
+        f"{_text(display_number)} AS display_number",
+        f"{_text(volume)} AS volume",
+        f"{_text(issue)} AS issue",
+        f"{_text(spec.published)} AS published",
+        f"{_text(series_title)} AS series_title",
+        f"{_text(volume_number)} AS volume_number",
     ]
     row = (
         conn.execute(
@@ -544,6 +567,14 @@ def get_item(
         title=row["title"] or "(untitled)",
         has_front=bool(row["has_front"]),
         has_back=bool(row["has_back"]),
+        title_values=TitleValues(
+            display_number=row["display_number"],
+            volume=row["volume"],
+            issue=row["issue"],
+            published=row["published"],
+            series_title=row["series_title"],
+            volume_number=row["volume_number"],
+        ),
     )
     for tab in spec.tabs:
         loaded = not tab.lazy or tab.key == load
