@@ -74,9 +74,7 @@ def test_periodical_browse_offers_and_preserves_issue_order(client, monkeypatch)
         assert '<option value="asc" selected>' in default.text
         assert "/browse/journal?sort=asc&amp;page=2" in default.text
 
-        descending = client.get(
-            "/browse/journal", params={"sort": "desc", "location": "UNKNOWN"}
-        )
+        descending = client.get("/browse/journal", params={"sort": "desc", "location": "UNKNOWN"})
         assert '<option value="desc" selected>' in descending.text
         assert '<input type="hidden" name="location" value="UNKNOWN">' in descending.text
 

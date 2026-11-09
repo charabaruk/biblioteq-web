@@ -224,8 +224,13 @@ def _keys_sql(
 ) -> str:
     sort_keys = ""
     if sort_columns:
-        sort_keys = ", lower(" + _text(spec.title) + ") AS title_order, " + ", ".join(
-            f"{_text(column)} AS sort_{index}" for index, column in enumerate(sort_columns)
+        sort_keys = (
+            ", lower("
+            + _text(spec.title)
+            + ") AS title_order, "
+            + ", ".join(
+                f"{_text(column)} AS sort_{index}" for index, column in enumerate(sort_columns)
+            )
         )
     return (
         f"SELECT '{spec.key}' AS type, {quote(spec.pk)} AS id, {_text(spec.title)} AS title"
@@ -304,8 +309,7 @@ def _natural_page(
 ) -> Page:
     # Sorting happens here because the database has no portable natural collation.
     union = " UNION ALL ".join(
-        _keys_sql(s, len(terms), location, sort_columns if issue_direction else ())
-        for s in specs
+        _keys_sql(s, len(terms), location, sort_columns if issue_direction else ()) for s in specs
     )
     title_key = title_sort_key(numbers) if numbers else lambda title: (title or "").lower()
     rows = conn.execute(text(union), params).all()
@@ -336,12 +340,8 @@ def _natural_page(
             if title_comparison:
                 return title_comparison
             for index, column in enumerate(sort_columns):
-                left_value = _periodical_sort_value(
-                    column, left._mapping[f"sort_{index}"], spec
-                )
-                right_value = _periodical_sort_value(
-                    column, right._mapping[f"sort_{index}"], spec
-                )
+                left_value = _periodical_sort_value(column, left._mapping[f"sort_{index}"], spec)
+                right_value = _periodical_sort_value(column, right._mapping[f"sort_{index}"], spec)
                 comparison = _compare_periodical_values(
                     left_value, right_value, issue_direction, nulls_first[index]
                 )

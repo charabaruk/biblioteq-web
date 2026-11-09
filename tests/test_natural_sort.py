@@ -101,12 +101,8 @@ def test_periodical_ordering(conn_and_catalog, type_key, natural, direction, exp
 
 def test_periodical_pagination_follows_issue_order(conn_and_catalog):
     conn, catalog = conn_and_catalog
-    first = repository.search(
-        conn, catalog, "", ["journal"], 1, 3, issue_direction="asc"
-    )
-    second = repository.search(
-        conn, catalog, "", ["journal"], 2, 3, issue_direction="asc"
-    )
+    first = repository.search(conn, catalog, "", ["journal"], 1, 3, issue_direction="asc")
+    second = repository.search(conn, catalog, "", ["journal"], 2, 3, issue_direction="asc")
     assert [item["id"] for item in first.items] == [5, 14, 13]
     assert [item["id"] for item in second.items] == [11, 12, 10]
 
@@ -123,9 +119,7 @@ def test_periodical_null_date_order_uses_database_default(
 ):
     conn, catalog = conn_and_catalog
     conn.execute(text("UPDATE journal SET pdate = NULL WHERE myoid = 13"))
-    page = repository.search(
-        conn, catalog, "", ["journal"], 1, 10, issue_direction=direction
-    )
+    page = repository.search(conn, catalog, "", ["journal"], 1, 10, issue_direction=direction)
     assert [item["id"] for item in page.items] == expected_ids
 
 
