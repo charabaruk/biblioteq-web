@@ -20,6 +20,63 @@ def test_periodical_cards_show_issue(client):
     assert "Issue " not in client.get("/browse/book").text
 
 
+def test_periodical_series_groups_and_orders_issues(configured):
+    from app import repository
+    from app.db import get_engine
+
+    with get_engine().connect() as conn:
+        catalog = repository.load_catalog(conn, "public")
+        for type_key, series_id, title, issue_ids in (
+            ("journal", "ISSN-JOURNAL", "Series Journal", [6, 5]),
+            ("magazine", "ISSN-MAGAZINE", "Series Magazine", [4, 3]),
+        ):
+            series = repository.get_series(conn, catalog, catalog.types[type_key], series_id, 1, 10)
+            assert series is not None
+            assert series.title == title
+            assert [item["id"] for item in series.items.items] == issue_ids
+            assert (
+                repository.get_series(conn, catalog, catalog.types[type_key], "missing", 1, 10)
+                is None
+            )
+
+
+def test_periodical_series_page_renders_issue_cover(client):
+    response = client.get("/series/journal/ISSN-JOURNAL")
+    assert response.status_code == 200
+    assert 'src="/cover/journal/5"' in response.text
+
+
+def test_periodical_series_page_paginates_in_issue_order(client, monkeypatch):
+    monkeypatch.setenv("BIBLIOTEQ_PAGE_SIZE", "1")
+    from app import config
+
+    config.get_settings.cache_clear()
+    try:
+        first = client.get("/series/journal/ISSN-JOURNAL")
+        assert "Page 1 of 2" in first.text
+        assert 'data-id="6"' in first.text
+        assert "/series/journal/ISSN-JOURNAL?sort=asc&amp;page=2" in first.text
+
+        second = client.get("/series/journal/ISSN-JOURNAL", params={"page": 2})
+        assert "Page 2 of 2" in second.text
+        assert 'data-id="5"' in second.text
+
+        newest = client.get("/series/journal/ISSN-JOURNAL", params={"sort": "desc"})
+        assert 'data-id="5"' in newest.text
+    finally:
+        config.get_settings.cache_clear()
+
+
+def test_periodical_issn_links_to_series(client):
+    for type_key, item_id, series_id in (
+        ("journal", 5, "ISSN-JOURNAL"),
+        ("magazine", 3, "ISSN-MAGAZINE"),
+    ):
+        response = client.get(f"/item/{type_key}/{item_id}")
+        assert response.status_code == 200
+        assert f'href="/series/{type_key}/{series_id}"' in response.text
+
+
 def test_search_matches_title_and_author(client):
     assert "Dune" in client.get("/search", params={"q": "dune"}).text
     assert "Frank Herbert" in client.get("/search", params={"q": "herbert"}).text

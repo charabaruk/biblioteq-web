@@ -198,6 +198,37 @@ def browse(
     )
 
 
+@router.get("/series/{type_key}/{series_id}", response_class=HTMLResponse)
+def series(
+    request: Request,
+    type_key: str,
+    series_id: str,
+    sort: Annotated[SortDirection, Query()] = "asc",
+    page: PageNo = 1,
+    conn: Connection = Depends(get_conn),
+    catalog: Catalog = Depends(get_localized_catalog),
+):
+    spec = require_type(type_key, catalog)
+    settings = get_settings()
+    series = repository.get_series(
+        conn, catalog, spec, series_id, page, settings.page_size, sort, settings.title_sort
+    )
+    if series is None:
+        raise HTTPException(status_code=404, detail="Item not found")
+    pager_params = {"sort": sort}
+    return templates.TemplateResponse(
+        request,
+        "series.html",
+        {
+            "types": catalog.types.values(),
+            "series": series,
+            "spec": spec,
+            "sort_direction": sort,
+            "pager": f"/series/{spec.key}/{series.id}?" + urlencode(pager_params),
+        },
+    )
+
+
 @router.get("/item/{type_key}/{item_id}", response_class=HTMLResponse)
 def item_detail(
     request: Request,

@@ -96,6 +96,14 @@ class Item:
     title_values: TitleValues = field(default_factory=TitleValues)
 
 
+@dataclass
+class Series:
+    spec: ItemType
+    id: str
+    title: str
+    items: Page
+
+
 def _columns_by_table(conn: Connection, schema: str) -> dict[str, set[str]]:
     columns: dict[str, set[str]] = {}
     if conn.dialect.name == "sqlite":
@@ -183,7 +191,12 @@ def _location_clause(spec: ItemType, location: str) -> str:
     )
 
 
-def _where_sql(spec: ItemType, n_terms: int, location: str | None = None) -> str:
+def _where_sql(
+    spec: ItemType,
+    n_terms: int,
+    location: str | None = None,
+    identifier_filter: str | None = None,
+) -> str:
     # Every term must match at least one searchable column.
     cols = spec.search_columns or (spec.title,)
     clauses = [
@@ -192,10 +205,19 @@ def _where_sql(spec: ItemType, n_terms: int, location: str | None = None) -> str
     ]
     if location is not None:
         clauses.append(_location_clause(spec, location))
+    if identifier_filter is not None:
+        clauses.append(
+            f"{quote(spec.identifier)} = :identifier_filter" if spec.identifier else "0 = 1"
+        )
     return " WHERE " + " AND ".join(clauses) if clauses else ""
 
 
-def _select_sql(spec: ItemType, n_terms: int, location: str | None = None) -> str:
+def _select_sql(
+    spec: ItemType,
+    n_terms: int,
+    location: str | None = None,
+    identifier_filter: str | None = None,
+) -> str:
     return (
         f"SELECT '{spec.key}' AS type, {quote(spec.pk)} AS id, {_text(spec.title)} AS title, "
         f"{_text(spec.creator)} AS creator, {_text(spec.identifier)} AS identifier, "
@@ -203,7 +225,7 @@ def _select_sql(spec: ItemType, n_terms: int, location: str | None = None) -> st
         f"{_text(spec.issue[1] if spec.issue else None)} AS issue_volume, "
         f"{_text(spec.issue[2] if spec.issue else None)} AS issue_number, "
         f"{_flag(spec.front_cover)} AS has_cover "
-        f"FROM {quote(spec.table)}" + _where_sql(spec, n_terms, location)
+        f"FROM {quote(spec.table)}" + _where_sql(spec, n_terms, location, identifier_filter)
     )
 
 
@@ -221,6 +243,7 @@ def _keys_sql(
     n_terms: int,
     location: str | None = None,
     sort_columns: tuple[str, ...] = (),
+    identifier_filter: str | None = None,
 ) -> str:
     sort_keys = ""
     if sort_columns:
@@ -235,7 +258,7 @@ def _keys_sql(
     return (
         f"SELECT '{spec.key}' AS type, {quote(spec.pk)} AS id, {_text(spec.title)} AS title"
         f"{sort_keys} "
-        f"FROM {quote(spec.table)}" + _where_sql(spec, n_terms, location)
+        f"FROM {quote(spec.table)}" + _where_sql(spec, n_terms, location, identifier_filter)
     )
 
 
@@ -286,10 +309,11 @@ def _periodical_nulls_first(
     location: str | None,
     column: str,
     direction: str,
+    identifier_filter: str | None,
 ) -> bool:
     sql = (
         f"SELECT {quote(column)} FROM {quote(spec.table)}"
-        + _where_sql(spec, len(terms), location)
+        + _where_sql(spec, len(terms), location, identifier_filter)
         + f" ORDER BY {quote(column)} {direction.upper()} LIMIT 1"
     )
     return conn.execute(text(sql), params).scalar() is None
@@ -306,10 +330,18 @@ def _natural_page(
     location: str | None = None,
     issue_direction: str | None = None,
     sort_columns: tuple[str, ...] = (),
+    identifier_filter: str | None = None,
 ) -> Page:
     # Sorting happens here because the database has no portable natural collation.
     union = " UNION ALL ".join(
-        _keys_sql(s, len(terms), location, sort_columns if issue_direction else ()) for s in specs
+        _keys_sql(
+            s,
+            len(terms),
+            location,
+            sort_columns if issue_direction else (),
+            identifier_filter,
+        )
+        for s in specs
     )
     title_key = title_sort_key(numbers) if numbers else lambda title: (title or "").lower()
     rows = conn.execute(text(union), params).all()
@@ -322,7 +354,14 @@ def _natural_page(
                 value is not None for value in values
             ):
                 nulls_first[index] = _periodical_nulls_first(
-                    conn, spec, terms, params, location, column, issue_direction
+                    conn,
+                    spec,
+                    terms,
+                    params,
+                    location,
+                    column,
+                    issue_direction,
+                    identifier_filter,
                 )
             else:
                 nulls_first[index] = False
@@ -383,13 +422,15 @@ def search(
     natural: str | None = None,
     location: str | None = None,
     issue_direction: str | None = None,
+    identifier_filter: str | None = None,
 ) -> Page:
     """Search the given types (all available if empty). An empty query lists everything.
 
     `natural` is "integer" or "decimal" to order titles naturally in Python;
     None orders in SQL by lowercased title. `location` keeps items at exactly that
     location; "UNKNOWN" also keeps items with none. `issue_direction` enables the
-    registered issue ordering for a periodical browse page.
+    registered issue ordering for a periodical browse page. `identifier_filter`
+    matches the registered identifier column exactly.
     """
     specs = [catalog.types[k] for k in type_keys if k in catalog.types] or list(
         catalog.types.values()
@@ -400,6 +441,8 @@ def search(
     params: dict[str, object] = {f"t{i}": _like_pattern(t) for i, t in enumerate(terms)}
     if location is not None:
         params["loc"] = location
+    if identifier_filter is not None:
+        params["identifier_filter"] = identifier_filter
     if issue_direction is not None and issue_direction not in ("asc", "desc"):
         raise ValueError("issue_direction must be 'asc' or 'desc'")
     sort_columns = _periodical_sort_columns(specs[0]) if len(specs) == 1 else ()
@@ -415,10 +458,23 @@ def search(
             location,
             issue_direction,
             sort_columns,
+            identifier_filter,
         )
     if natural:
-        return _natural_page(conn, specs, terms, params, page, page_size, natural, location)
-    union = " UNION ALL ".join(_select_sql(s, len(terms), location) for s in specs)
+        return _natural_page(
+            conn,
+            specs,
+            terms,
+            params,
+            page,
+            page_size,
+            natural,
+            location,
+            identifier_filter=identifier_filter,
+        )
+    union = " UNION ALL ".join(
+        _select_sql(s, len(terms), location, identifier_filter) for s in specs
+    )
 
     total = conn.execute(text(f"SELECT count(*) FROM ({union}) u"), params).scalar_one()
     page = max(1, min(page, max(1, -(-total // page_size))))
@@ -640,7 +696,12 @@ def _load_sections(
                     continue
                 if column in {"issueno", "issuevolume"} and value == "0":
                     continue
-                url = _location_url(conn, catalog, spec, value) if column == spec.location else None
+                if column == spec.location:
+                    url = _location_url(conn, catalog, spec, value)
+                elif spec.key in {"journal", "magazine"} and column == spec.identifier:
+                    url = f"/series/{spec.key}/{url_quote(value, safe='')}"
+                else:
+                    url = None
                 pairs.append((label, value, url))
             if pairs:
                 sections.append(Section("fields", "", fields=pairs))
@@ -756,3 +817,85 @@ def get_cover(conn: Connection, spec: ItemType, item_id: int, side: str) -> byte
     ).scalar()
     conn.rollback()
     return bytes(data) if data is not None else None
+
+
+def _periodical_get_series(
+    conn: Connection,
+    catalog: Catalog,
+    spec: ItemType,
+    series_id: str,
+    page: int,
+    page_size: int,
+    direction: str | None = None,
+    natural: str | None = None,
+) -> Series | None:
+    if not spec.identifier or not spec.issue:
+        conn.rollback()
+        return None
+
+    result = search(
+        conn,
+        catalog,
+        "",
+        [spec.key],
+        page,
+        page_size,
+        natural,
+        issue_direction=direction or "asc",
+        identifier_filter=series_id,
+    )
+    if not result.total:
+        return None
+
+    first_page = result
+    if result.page != 1:
+        first_page = search(
+            conn,
+            catalog,
+            "",
+            [spec.key],
+            1,
+            page_size,
+            natural,
+            issue_direction=direction or "asc",
+            identifier_filter=series_id,
+        )
+
+    return Series(
+        spec=spec,
+        id=series_id,
+        title=first_page.items[0]["title"] or "(untitled)",
+        items=result,
+    )
+
+
+def _book_get_series(
+    conn: Connection,
+    catalog: Catalog,
+    spec: ItemType,
+    series_id: str,
+    page: int,
+    page_size: int,
+    direction: str | None = None,
+) -> Series | None:
+    # TODO: requires implementation
+    return None
+
+
+def get_series(
+    conn: Connection,
+    catalog: Catalog,
+    spec: ItemType,
+    series_id: str,
+    page: int,
+    page_size: int,
+    direction: str | None = None,
+    natural: str | None = None,
+) -> Series | None:
+    if spec.key == "journal" or spec.key == "magazine":
+        return _periodical_get_series(
+            conn, catalog, spec, series_id, page, page_size, direction, natural
+        )
+    elif spec.key == "book":
+        return _book_get_series(conn, catalog, spec, series_id, page, page_size, direction)
+    return None

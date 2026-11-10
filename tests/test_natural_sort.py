@@ -107,6 +107,44 @@ def test_periodical_pagination_follows_issue_order(conn_and_catalog):
     assert [item["id"] for item in second.items] == [11, 12, 10]
 
 
+def test_periodical_search_filters_exact_identifier_and_paginates(conn_and_catalog):
+    conn, catalog = conn_and_catalog
+    conn.execute(
+        text("UPDATE journal SET id = :identifier WHERE myoid IN (10, 11, 12)"),
+        {"identifier": "SERIES-A"},
+    )
+    conn.execute(
+        text("UPDATE journal SET id = :identifier WHERE myoid = 13"),
+        {"identifier": "SERIES-AB"},
+    )
+    conn.commit()
+
+    first = repository.search(
+        conn,
+        catalog,
+        "",
+        ["journal"],
+        1,
+        2,
+        issue_direction="asc",
+        identifier_filter="SERIES-A",
+    )
+    second = repository.search(
+        conn,
+        catalog,
+        "",
+        ["journal"],
+        2,
+        2,
+        issue_direction="asc",
+        identifier_filter="SERIES-A",
+    )
+
+    assert first.total == 3
+    assert [item["id"] for item in first.items] == [11, 12]
+    assert [item["id"] for item in second.items] == [10]
+
+
 @pytest.mark.parametrize(
     ("direction", "expected_ids"),
     [
