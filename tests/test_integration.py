@@ -25,6 +25,39 @@ def test_search_matches_title_and_author(client):
     assert "Frank Herbert" in client.get("/search", params={"q": "herbert"}).text
 
 
+def test_search_without_query_shows_heading_and_skips_search(client, monkeypatch):
+    from app import repository
+
+    def unexpected_search(*args, **kwargs):
+        raise AssertionError("search should not run when q is absent")
+
+    monkeypatch.setattr(repository, "search", unexpected_search)
+    response = client.get("/search")
+
+    assert response.status_code == 200
+    assert '<h1>Search the collection</h1>' in response.text
+    assert response.text.index("<h1>") < response.text.index('class="search-form"')
+    assert 'class="count"' not in response.text
+
+
+def test_search_with_explicit_empty_query_runs_search(client, monkeypatch):
+    from app import repository
+
+    queries = []
+    original_search = repository.search
+
+    def recording_search(*args, **kwargs):
+        queries.append(args[2])
+        return original_search(*args, **kwargs)
+
+    monkeypatch.setattr(repository, "search", recording_search)
+    response = client.get("/search?q=")
+
+    assert response.status_code == 200
+    assert queries == [""]
+    assert 'class="count"' in response.text
+
+
 def test_search_multiple_terms_are_anded(client):
     r = client.get("/search", params={"q": "dune adams"})
     assert "0 results" in r.text
@@ -212,11 +245,11 @@ def test_browse_unknown_location_includes_items_without_one(client):
 
 
 def test_search_filters_by_location_and_terms(client):
-    r = client.get("/search", params={"location": "Shelf A"})
+    r = client.get("/search", params={"q": "", "location": "Shelf A"})
     assert "Hitchhiker" in r.text and "Hidden Journal Values" in r.text
     assert "Dune" not in r.text
     assert "0 results" in client.get("/search", params={"q": "dune", "location": "Shelf A"}).text
-    r = client.get("/search", params={"location": "UNKNOWN", "type": "journal"})
+    r = client.get("/search", params={"q": "", "location": "UNKNOWN", "type": "journal"})
     assert "Visible Journal Values" in r.text and "Hidden Journal Values" not in r.text
 
 
@@ -239,7 +272,7 @@ def test_location_filter_survives_pagination(client, monkeypatch):
 
     config.get_settings.cache_clear()
     try:
-        r = client.get("/search", params={"location": "UNKNOWN"})
+        r = client.get("/search", params={"q": "", "location": "UNKNOWN"})
         assert "location=UNKNOWN&amp;page=2" in r.text
         r = client.get("/browse/magazine", params={"location": "UNKNOWN"})
         assert "/browse/magazine?sort=asc&amp;location=UNKNOWN&amp;page=2" in r.text

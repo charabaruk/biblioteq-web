@@ -19,9 +19,11 @@
   </select>
   <button type="submit">{{ pgettext('button', 'Search') }}</button>
 </form>
+{% if result is not none %}
 <p class="count">
   {% trans count=result.total %}{{ count }} result{% pluralize %}{{ count }} results{% endtrans %}
 </p>
 <div class="grid">{% for it in result.items %}{{ card(it, type_labels[it.type]) }}{% endfor %}</div>
 {{ pagination(result, pager) }}
+{% endif %}
 {% endblock %}

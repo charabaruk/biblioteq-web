@@ -116,7 +116,7 @@ def location(
 @router.get("/search", response_class=HTMLResponse)
 def search(
     request: Request,
-    q: Annotated[str, Query(max_length=200)] = "",
+    q: Annotated[str | None, Query(max_length=200)] = None,
     type: Annotated[str, Query(max_length=40)] = "",
     location: LocationFilter = "",
     page: PageNo = 1,
@@ -125,25 +125,28 @@ def search(
 ):
     selected = [type] if type in catalog.types else []
     settings = get_settings()
-    result = repository.search(
-        conn,
-        catalog,
-        q,
-        selected,
-        page,
-        settings.page_size,
-        settings.title_sort,
-        location or None,
-    )
-    pager = "/search?" + urlencode(
-        {"q": q, "type": type, **({"location": location} if location else {})}
-    )
+    result = None
+    pager = None
+    if q is not None:
+        result = repository.search(
+            conn,
+            catalog,
+            q,
+            selected,
+            page,
+            settings.page_size,
+            settings.title_sort,
+            location or None,
+        )
+        pager = "/search?" + urlencode(
+            {"q": q, "type": type, **({"location": location} if location else {})}
+        )
     return templates.TemplateResponse(
         request,
         "search.html",
         {
             "types": catalog.types.values(),
-            "q": q,
+            "q": q or "",
             "selected_type": type,
             "location": location,
             "locations": repository.location_options(conn, catalog),
