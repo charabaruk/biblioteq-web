@@ -23,6 +23,50 @@ def test_periodical_cards_show_issue(client):
     assert "Issue " not in client.get("/browse/book").text
 
 
+@pytest.mark.parametrize("identifier", ["ISSN-123", None, "   "])
+@pytest.mark.parametrize("issue_display", ["42", None])
+def test_series_card_shows_publisher_and_optional_issn(identifier, issue_display):
+    from app.templating import templates
+
+    template = templates.env.from_string(
+        '{% from "_components.html" import card with context %}{{ card(item, "Journal") }}'
+    )
+    html = template.render(
+        base="",
+        item={
+            "type": "journal",
+            "id": 1,
+            "title": "Example Journal",
+            "series_url": "/series/journal/example",
+            "has_cover": False,
+            "issue_display": issue_display,
+            "issue_volume": "2025",
+            "issue_number": "3",
+            "creator": "Example Publisher",
+            "identifier": identifier,
+        },
+        gettext=lambda message: message,
+        ngettext=lambda singular, plural, count: singular if count == 1 else plural,
+    )
+
+    assert "Example Publisher" in html
+    assert "Issue 42" not in html
+    assert "vol. 2025" not in html
+    assert "Vol. 2025" not in html
+    if identifier == "ISSN-123":
+        assert '<div class="card-meta">ISSN-123</div>' in html
+    else:
+        assert 'class="card-meta"' not in html
+
+
+@pytest.mark.parametrize("type_key", ["journal", "magazine"])
+def test_periodical_series_cards_hide_issue_numbers(client, type_key):
+    response = client.get(f"/browse/{type_key}/by-series")
+    assert response.status_code == 200
+    assert "Issue 42" not in response.text
+    assert "vol. 2025 no. 3" not in response.text
+
+
 def test_periodical_series_groups_and_orders_issues(configured):
     from app import repository
     from app.db import get_engine
