@@ -2,6 +2,7 @@
 {% from "_components.html" import card, pagination with context %}
 {% block title %}{% trans query=q %}Search: {{ query }}{% endtrans %} - {{ site_title }}{% endblock %}
 {% block content %}
+<h1>{{ _('Search the collection') }}</h1>
 <form action="{{ base }}/search" method="get" class="search-form">
   <input type="search" name="q" value="{{ q }}" aria-label="{{ pgettext('aria-label', 'Search') }}">
   <label for="search-type" class="hidden-label">{{ pgettext('aria-label', 'Item type') }}</label>
