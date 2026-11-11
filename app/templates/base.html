@@ -5,28 +5,37 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% block title %}{{ site_title }}{% endblock %}</title>
   <link rel="stylesheet" href="{{ base }}/static/style.css">
+  <script src="{{ base }}/static/header.js" defer></script>
   <link rel="icon" href="{{ base }}/static/favicon.ico" type="image/x-icon">
   <link rel="apple-touch-icon" href="{{ base }}/static/apple-touch-icon.png">
 </head>
 <body>
 <header class="site-header">
   <a class="brand" href="{{ base }}/">{{ site_title }}</a>
-  <nav>
-    {% for t in types %}<a href="{{ base }}/browse/{{ t.key }}">{{ t.label_plural }}</a>{% endfor %}
-  </nav>
-  <form action="{{ base }}/search" method="get" class="search-mini" role="search">
-    <input type="search" name="q" placeholder="{{ pgettext('placeholder', 'Search') }}" aria-label="{{ pgettext('aria-label', 'Search') }}" value="{{ q or '' }}">
-  </form>
-  {% if languages|length > 1 %}
-  <form action="{{ base }}/language" method="get" class="language-select">
-    <input type="hidden" name="next" value="{{ base }}{{ request.scope.path }}{% if request.url.query %}?{{ request.url.query }}{% endif %}">
-    <label for="language">{{ _('Language') }}</label>
-    <select id="language" name="lang">
-      {% for option in languages %}<option value="{{ option.code }}" {{ 'selected' if option.code == lang }}>{{ option.name }}</option>{% endfor %}
-    </select>
-    <button type="submit">{{ _('Apply') }}</button>
-  </form>
-  {% endif %}
+  <details class="header-menu" open>
+    <summary class="menu-toggle" aria-label="{{ _('Menu') }}">
+      <img class="menu-icon" src="{{ base }}/static/menu.svg" alt="" aria-hidden="true">
+    </summary>
+    <div class="menu-panel">
+      <nav>
+        {% for t in types %}<a href="{{ base }}/browse/{{ t.key }}">{{ t.label_plural }}</a>{% endfor %}
+      </nav>
+      <form action="{{ base }}/search" method="get" class="search-mini" role="search">
+        <input type="search" name="q" placeholder="{{ pgettext('placeholder', 'Search') }}" aria-label="{{ pgettext('aria-label', 'Search') }}" value="{{ q or '' }}">
+      </form>
+      <a class="search-page-link" href="{{ base }}/search">{{ pgettext('aria-label', 'Search') }}</a>
+      {% if languages|length > 1 %}
+      <form action="{{ base }}/language" method="get" class="language-select">
+        <input type="hidden" name="next" value="{{ base }}{{ request.scope.path }}{% if request.url.query %}?{{ request.url.query }}{% endif %}">
+        <label for="language">{{ _('Language') }}</label>
+        <select id="language" name="lang">
+          {% for option in languages %}<option value="{{ option.code }}" {{ 'selected' if option.code == lang }}>{{ option.name }}</option>{% endfor %}
+        </select>
+        <button type="submit">{{ _('Apply') }}</button>
+      </form>
+      {% endif %}
+    </div>
+  </details>
 </header>
 <main>
 {% block content %}{% endblock %}

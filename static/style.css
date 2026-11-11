@@ -28,10 +28,15 @@ a:hover { text-decoration: underline; }
   padding: 0.75rem 1.5rem;
   background: var(--card);
   border-bottom: 1px solid var(--border);
+  position: relative;
 }
 .brand { font-weight: 700; font-size: 1.2rem; color: var(--fg); }
+.header-menu { flex: 1; min-width: 0; }
+.menu-toggle { display: none; }
+.menu-panel { display: flex; align-items: center; gap: 1rem; }
 .site-header nav { display: flex; flex-wrap: wrap; gap: 0.75rem; flex: 1; }
 .search-mini input { padding: 0.35rem 0.6rem; }
+.search-page-link { display: none; }
 .language-select { display: flex; flex-wrap: wrap; align-items: center; gap: 0.35rem; }
 .language-select select { max-width: 9rem; }
 
@@ -91,6 +96,49 @@ dd { margin: 0; white-space: pre-wrap; }
 .tabs-ready .tab-title { display: none; }
 .tab-panel[hidden] { display: none; }
 
-@media (max-width: 640px) {
+@media (max-width: 900px) {
+  .site-header { position: sticky; top: 0; z-index: 2; gap: 0.75rem; padding: 0.5rem 1rem; }
+  .header-menu { flex: 0 0 auto; margin-left: auto; }
+  .menu-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    min-height: 44px;
+    padding: 0;
+    cursor: pointer;
+    list-style: none;
+  }
+  .menu-toggle::-webkit-details-marker { display: none; }
+  .menu-icon { display: block; width: 24px; height: 24px; }
+  .menu-panel {
+    position: absolute;
+    z-index: 1;
+    top: 100%;
+    right: 0;
+    left: 0;
+    display: grid;
+    max-height: calc(100vh - 4rem);
+    max-height: calc(100dvh - 4rem);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    gap: 1rem;
+    padding: 1rem;
+    background: var(--card);
+    border-bottom: 1px solid var(--border);
+    box-shadow: 0 4px 8px rgb(0 0 0 / 12%);
+  }
+  .header-menu:not([open]) > .menu-panel { display: none; }
+  .site-header nav { flex-direction: column; align-items: flex-start; gap: 0.25rem; }
+  .site-header nav a { display: flex; align-items: center; min-height: 44px; }
+  .search-mini { display: none; }
+  .search-page-link {
+    display: flex;
+    align-items: center;
+    min-height: 44px;
+    padding-top: 0.75rem;
+    border-top: 1px solid var(--border);
+  }
+  .language-select { align-items: center; }
   .detail { grid-template-columns: 1fr; }
 }
