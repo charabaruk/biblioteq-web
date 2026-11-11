@@ -107,6 +107,63 @@ def test_periodical_pagination_follows_issue_order(conn_and_catalog):
     assert [item["id"] for item in second.items] == [11, 12, 10]
 
 
+@pytest.mark.parametrize("type_key", ["journal", "magazine"])
+@pytest.mark.parametrize("natural", [None, "integer"])
+def test_periodical_series_group_before_pagination(conn_and_catalog, type_key, natural):
+    conn, catalog = conn_and_catalog
+    conn.execute(text(f"DELETE FROM {type_key}"))
+    conn.execute(
+        text(
+            f"INSERT INTO {type_key} (myoid, title, id, issuevolume, issueno, display_number) "
+            "VALUES (:oid, :title, :identifier, :volume, :issue, :display)"
+        ),
+        [
+            {
+                "oid": 1,
+                "title": "Z Old",
+                "identifier": "Shared",
+                "volume": 1,
+                "issue": 1,
+                "display": 1,
+            },
+            {
+                "oid": 2,
+                "title": "A New",
+                "identifier": "Shared",
+                "volume": 2,
+                "issue": 1,
+                "display": 1,
+            },
+            {
+                "oid": 3,
+                "title": "Shared",
+                "identifier": None,
+                "volume": 1,
+                "issue": 1,
+                "display": 1,
+            },
+            {"oid": 4, "title": "Shared", "identifier": " ", "volume": 1, "issue": 2, "display": 2},
+            {
+                "oid": 5,
+                "title": "Shared",
+                "identifier": "Other",
+                "volume": 1,
+                "issue": 1,
+                "display": 1,
+            },
+        ],
+    )
+    conn.commit()
+    spec = catalog.types[type_key]
+    first = repository.browse_periodical_series(conn, spec, 1, 2, natural)
+    second = repository.browse_periodical_series(conn, spec, 2, 2, natural)
+
+    assert first.total == second.total == 3
+    assert [item["id"] for item in first.items + second.items] == [2, 5, 4]
+    assert second.items[0]["series_url"].endswith("/by-title/Shared")
+    assert repository.browse_periodical_series(conn, spec, 99, 2, natural).page == 2
+
+
 def test_periodical_search_filters_exact_identifier_and_paginates(conn_and_catalog):
     conn, catalog = conn_and_catalog
     conn.execute(

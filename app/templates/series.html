@@ -7,6 +7,10 @@
   {% trans count=series.items.total %}{{ count }} item{% pluralize %}{{ count }} items{% endtrans %}
 </p>
 <form action="{{ base }}{{ series_action }}" method="get" class="sort-form">
+  {% if series_key %}
+  <input type="hidden" name="kind" value="{{ series_key.kind }}">
+  <input type="hidden" name="value" value="{{ series_key.value }}">
+  {% endif %}
   <label for="issue-sort">{{ _('Issue order') }}</label>
   <select id="issue-sort" name="sort">
     <option value="asc" {{ 'selected' if sort_direction == 'asc' }}>{{ _('Oldest first') }}</option>

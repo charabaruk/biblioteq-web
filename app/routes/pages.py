@@ -198,6 +198,76 @@ def browse(
     )
 
 
+@router.get("/browse/{type_key}/by-series", response_class=HTMLResponse)
+def browse_series(
+    request: Request,
+    type_key: str,
+    page: PageNo = 1,
+    conn: Connection = Depends(get_conn),
+    catalog: Catalog = Depends(get_localized_catalog),
+):
+    spec = require_type(type_key, catalog)
+    if spec.key not in {"journal", "magazine"} or not spec.identifier or not spec.issue:
+        raise HTTPException(status_code=404, detail="Item not found")
+    settings = get_settings()
+    result = repository.browse_periodical_series(
+        conn, spec, page, settings.page_size, settings.title_sort
+    )
+    return templates.TemplateResponse(
+        request,
+        "browse.html",
+        {
+            "types": catalog.types.values(),
+            "spec": spec,
+            "result": result,
+            "series_view": True,
+            "pager": f"/browse/{spec.key}/by-series?",
+        },
+    )
+
+
+@router.get("/series/{type_key}", response_class=HTMLResponse)
+def series_by_key(
+    request: Request,
+    type_key: str,
+    kind: Literal["id", "title"],
+    value: str,
+    sort: Annotated[SortDirection, Query()] = "asc",
+    page: PageNo = 1,
+    conn: Connection = Depends(get_conn),
+    catalog: Catalog = Depends(get_localized_catalog),
+):
+    spec = require_type(type_key, catalog)
+    if spec.key not in {"journal", "magazine"}:
+        raise HTTPException(status_code=404, detail="Item not found")
+    settings = get_settings()
+    if kind == "title":
+        result = repository.get_series_by_title(
+            conn, catalog, spec, value, page, settings.page_size, sort, settings.title_sort
+        )
+    else:
+        result = repository.get_series(
+            conn, catalog, spec, value, page, settings.page_size, sort, settings.title_sort
+        )
+    if result is None or isinstance(result, list):
+        raise HTTPException(status_code=404, detail="Item not found")
+    action = f"/series/{spec.key}"
+    params = {"kind": kind, "value": value}
+    return templates.TemplateResponse(
+        request,
+        "series.html",
+        {
+            "types": catalog.types.values(),
+            "series": result,
+            "spec": spec,
+            "sort_direction": sort,
+            "series_action": action,
+            "series_key": params,
+            "pager": action + "?" + urlencode({**params, "sort": sort}),
+        },
+    )
+
+
 @router.get("/series/{type_key}/by-title/{title:path}", response_class=HTMLResponse)
 def series_by_title(
     request: Request,

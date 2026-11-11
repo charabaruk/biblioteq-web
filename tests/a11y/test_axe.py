@@ -16,6 +16,7 @@ PAGES = {
     "search-no-results": "/search?q=zzzznothing",
     "browse": "/browse/book",
     "browse-periodicals": "/browse/journal",
+    "browse-periodical-series": "/browse/journal/by-series",
     "browse-location": "/browse/book?location=Orphan%20Room",
     "search-location": "/search?location=Orphan%20Room",
     "location": "/location/Shelf%20A",

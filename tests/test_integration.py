@@ -103,6 +103,7 @@ def title_series_type(client, db_url, request):
         {"oid": 9016, "title": "/Leading", "identifier": None, "issue": 1},
         {"oid": 9017, "title": "Trailing/", "identifier": None, "issue": 1},
         {"oid": 9018, "title": "/", "identifier": None, "issue": 1},
+        {"oid": 9019, "title": "Mixed Empty", "identifier": "   ", "issue": 3},
     ]
     with engine.begin() as conn:
         conn.execute(
@@ -116,7 +117,7 @@ def title_series_type(client, db_url, request):
     with engine.begin() as conn:
         conn.execute(
             text(f"DELETE FROM {type_key} WHERE myoid BETWEEN :first AND :last"),
-            {"first": 9001, "last": 9018},
+            {"first": 9001, "last": 9019},
         )
     engine.dispose()
 
@@ -131,6 +132,106 @@ def test_title_series_uses_reserved_path(client, title_series_type):
 
 def _title_series_path(type_key, title):
     return f"/series/{type_key}/by-title/{quote(title, safe='')}"
+
+
+def test_periodical_browse_by_series(client, title_series_type):
+    from html import unescape
+    from urllib.parse import urlencode
+
+    response = client.get(f"/browse/{title_series_type}/by-series")
+
+    assert response.status_code == 200
+    query = urlencode({"kind": "title", "value": "Shared / Title & More"})
+    assert f"/series/{title_series_type}?{query}" in unescape(response.text)
+    assert f"/series/{title_series_type}/ISSN-X" in response.text
+    assert f'src="/cover/{title_series_type}/9003"' not in response.text
+
+
+def test_series_browse_handles_reserved_identifier(client, title_series_type):
+    from html import unescape
+    from urllib.parse import urlencode
+
+    identifier = "by-title/Shared / Title & More"
+    query = urlencode({"kind": "id", "value": identifier})
+    url = f"/series/{title_series_type}?{query}"
+    listing = unescape(client.get(f"/browse/{title_series_type}/by-series").text)
+    assert f'href="{url}"' in listing
+
+    response = client.get(url)
+    assert response.status_code == 200
+    assert 'data-id="9015"' in response.text
+    assert 'data-id="9001"' not in response.text
+    assert 'name="kind" value="id"' in response.text
+    assert 'name="value"' in response.text
+
+
+def test_series_browse_ignores_location_and_keeps_navigation(
+    client, title_series_type, monkeypatch
+):
+    from app import config
+
+    monkeypatch.setenv("BIBLIOTEQ_PAGE_SIZE", "1")
+    config.get_settings.cache_clear()
+    try:
+        path = f"/browse/{title_series_type}/by-series"
+        response = client.get(path, params={"location": "nonexistent"})
+        assert response.status_code == 200
+        assert "data-id=" in response.text
+        assert f"{path}?page=2" in response.text
+        assert f'href="/browse/{title_series_type}"' in response.text
+        assert 'name="location"' not in response.text
+        assert client.get("/browse/book/by-series").status_code == 404
+    finally:
+        config.get_settings.cache_clear()
+
+
+def test_series_browse_uses_latest_issue_cover(client):
+    response = client.get("/browse/journal/by-series")
+    assert 'src="/cover/journal/5"' in response.text
+    assert 'src="/cover/journal/6"' not in response.text
+
+
+def test_series_browse_does_not_fall_back_to_older_cover(client, db_url):
+    engine = create_engine(db_url)
+    with engine.begin() as conn:
+        conn.execute(
+            text("UPDATE journal SET front_cover = :cover WHERE myoid = 5"), {"cover": None}
+        )
+        conn.execute(
+            text("UPDATE journal SET front_cover = :cover WHERE myoid = 6"), {"cover": b"older"}
+        )
+    try:
+        response = client.get("/browse/journal/by-series")
+        assert 'src="/cover/journal/6"' not in response.text
+        assert 'src="/cover/journal/5"' not in response.text
+        assert 'data-id="5"' in response.text
+        card = response.text.split('data-id="5">', 1)[1].split("</a>", 1)[0]
+        assert 'class="no-cover"' in card
+    finally:
+        with engine.begin() as conn:
+            conn.execute(
+                text("UPDATE journal SET front_cover = :cover WHERE myoid = 5"), {"cover": b"\x01"}
+            )
+            conn.execute(
+                text("UPDATE journal SET front_cover = :cover WHERE myoid = 6"), {"cover": None}
+            )
+        engine.dispose()
+
+
+def test_typed_series_url_respects_root_path(client, title_series_type):
+    from urllib.parse import urlencode
+
+    from fastapi.testclient import TestClient
+
+    from app.main import app
+
+    query = urlencode({"kind": "title", "value": "Shared / Title & More"})
+    with TestClient(app, root_path="/library") as mounted:
+        response = mounted.get(f"/library/series/{title_series_type}?{query}")
+        assert response.status_code == 200
+        assert 'data-id="9001"' in response.text
+        assert f'action="/library/series/{title_series_type}"' in response.text
+        assert 'name="kind" value="title"' in response.text
 
 
 def test_title_series_shows_only_null_identifiers(client, title_series_type, monkeypatch):
@@ -160,14 +261,26 @@ def test_title_series_shows_only_null_identifiers(client, title_series_type, mon
         config.get_settings.cache_clear()
 
 
-@pytest.mark.parametrize(
-    "title,identifier", [("One Identifier", "ISSN%2FONE"), ("Empty Identifier", "")]
-)
-def test_title_series_redirects_single_identifier(client, title_series_type, title, identifier):
-    response = client.get(_title_series_path(title_series_type, title), follow_redirects=False)
+def test_title_series_redirects_single_identifier(client, title_series_type):
+    response = client.get(
+        _title_series_path(title_series_type, "One Identifier"), follow_redirects=False
+    )
     assert response.status_code in (302, 303, 307, 308)
-    assert response.headers["location"].startswith(f"/series/{title_series_type}/{identifier}")
+    assert response.headers["location"].startswith(f"/series/{title_series_type}/ISSN%2FONE")
     assert client.get(response.headers["location"]).status_code == 200
+
+
+def test_title_series_includes_blank_identifiers(client, title_series_type):
+    empty = client.get(_title_series_path(title_series_type, "Empty Identifier"))
+    assert empty.status_code == 200
+    assert 'data-id="9009"' in empty.text
+
+    mixed = client.get(_title_series_path(title_series_type, "Mixed Empty"))
+    assert mixed.status_code == 200
+    assert 'data-id="9013"' in mixed.text
+    assert 'data-id="9019"' in mixed.text
+    assert 'data-id="9014"' not in mixed.text
+    assert client.get(f"/series/{title_series_type}/").status_code == 200
 
 
 def test_title_series_offers_each_distinct_identifier(client, title_series_type):
@@ -177,9 +290,6 @@ def test_title_series_offers_each_distinct_identifier(client, title_series_type)
     assert response.text.count(f'href="/series/{title_series_type}/ISSN-B"') == 1
     assert "Many Identifiers" in response.text
     assert client.get(f"/series/{title_series_type}/ISSN-A").status_code == 200
-    empty = client.get(_title_series_path(title_series_type, "Mixed Empty"))
-    assert f'href="/series/{title_series_type}/"' in empty.text
-    assert "(empty)" in empty.text
 
 
 def test_title_series_rejects_missing_matches_and_other_types(client, title_series_type):

@@ -39,6 +39,18 @@ def test_periodical_series_navigation_without_javascript(live_url, nojs_page):
     assert nojs_page.url.endswith("/series/journal/ISSN-A")
 
 
+def test_periodical_browse_modes_without_javascript(live_url, nojs_page):
+    nojs_page.goto(live_url + "/browse/journal?location=Shelf%20A")
+    nojs_page.get_by_role("link", name="Series", exact=True).click()
+    assert nojs_page.url.endswith("/browse/journal/by-series")
+    assert (
+        nojs_page.get_by_role("link", name="Series", exact=True).get_attribute("aria-current")
+        == "page"
+    )
+    nojs_page.get_by_role("link", name="Issues", exact=True).click()
+    assert nojs_page.url.endswith("/browse/journal")
+
+
 def test_periodical_series_sort_with_encoded_title(live_url, nojs_page):
     nojs_page.goto(live_url + "/item/journal/9006")
     nojs_page.get_by_role("link", name="View series").click()
@@ -58,6 +70,7 @@ def test_periodical_series_pages_reflow(live_url, browser, width):
     page = context.new_page()
     try:
         for path in (
+            "/browse/journal/by-series",
             "/series/journal/by-title/Hidden%20Journal%20Values",
             "/series/journal/by-title/Shared%20Journal",
             "/series/journal/by-title/" + "A" * 180,

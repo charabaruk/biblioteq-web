@@ -3,7 +3,13 @@
 {% block title %}{{ spec.label_plural }} - {{ site_title }}{% endblock %}
 {% block content %}
 <h1>{{ spec.label_plural }}</h1>
-{% if spec.issue %}
+{% if spec.key in ['journal', 'magazine'] and spec.identifier and spec.issue %}
+<nav class="browse-views" aria-label="{{ _('Browse view') }}">
+  <a href="{{ base }}/browse/{{ spec.key }}" {% if not series_view %}aria-current="page"{% endif %}>{{ _('Issues') }}</a>
+  <a href="{{ base }}/browse/{{ spec.key }}/by-series" {% if series_view %}aria-current="page"{% endif %}>{{ _('Series') }}</a>
+</nav>
+{% endif %}
+{% if spec.issue and not series_view %}
 <form action="{{ base }}/browse/{{ spec.key }}" method="get" class="sort-form">
   <label for="issue-sort">{{ _('Issue order') }}</label>
   <select id="issue-sort" name="sort">
@@ -21,8 +27,12 @@
 </p>
 {% endif %}
 <p class="count">
+  {% if series_view %}
+  {% trans count=result.total %}{{ count }} series{% pluralize %}{{ count }} series{% endtrans %}
+  {% else %}
   {% trans count=result.total %}{{ count }} item{% pluralize %}{{ count }} items{% endtrans %}
+  {% endif %}
 </p>
-<div class="grid">{% for it in result.items %}{{ card(it, spec.label) }}{% endfor %}</div>
+<div class="grid{% if series_view %} series-list{% endif %}">{% for it in result.items %}{{ card(it, spec.label) }}{% endfor %}</div>
 {{ pagination(result, pager) }}
 {% endblock %}

@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: biblioteq-web 0.3.0\n"
 "Report-Msgid-Bugs-To: https://github.com/charabaruk/biblioteq-web/issues\n"
-"POT-Creation-Date: 2026-11-11 16:49-0500\n"
+"POT-Creation-Date: 2026-11-11 17:42-0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -581,39 +581,58 @@ msgctxt "aria-label"
 msgid "Search"
 msgstr ""
 
-#: app/templates/base.html:34 app/templates/browse.html:14
-#: app/templates/series.html:17
+#: app/templates/base.html:34 app/templates/browse.html:20
+#: app/templates/series.html:20
 msgid "Apply"
 msgstr ""
 
-#: app/templates/browse.html:8 app/templates/series.html:11
+#: app/templates/browse.html:7
+msgid "Browse view"
+msgstr ""
+
+#: app/templates/browse.html:8
+msgid "Issues"
+msgstr ""
+
+#: app/templates/browse.html:9
+msgid "Series"
+msgstr ""
+
+#: app/templates/browse.html:14 app/templates/series.html:14
 msgid "Issue order"
 msgstr ""
 
-#: app/templates/browse.html:10 app/templates/series.html:13
+#: app/templates/browse.html:16 app/templates/series.html:16
 msgid "Oldest first"
 msgstr ""
 
-#: app/templates/browse.html:11 app/templates/series.html:14
+#: app/templates/browse.html:17 app/templates/series.html:17
 msgid "Newest first"
 msgstr ""
 
-#: app/templates/browse.html:19 app/templates/location.html:3
+#: app/templates/browse.html:25 app/templates/location.html:3
 #: app/templates/location.html:5
 msgid "Unknown location"
 msgstr ""
 
-#: app/templates/browse.html:19 app/templates/location.html:3
+#: app/templates/browse.html:25 app/templates/location.html:3
 #: app/templates/location.html:5
 #, python-format
 msgid "Location: %(name)s"
 msgstr ""
 
-#: app/templates/browse.html:20
+#: app/templates/browse.html:26
 msgid "Clear filter"
 msgstr ""
 
-#: app/templates/browse.html:24 app/templates/series.html:7
+#: app/templates/browse.html:31
+#, python-format
+msgid "%(count)s series"
+msgid_plural "%(count)s series"
+msgstr[0] ""
+msgstr[1] ""
+
+#: app/templates/browse.html:33 app/templates/series.html:7
 #, python-format
 msgid "%(count)s item"
 msgid_plural "%(count)s items"
