@@ -28,6 +28,77 @@ def test_search_works_without_javascript(live_url, nojs_page):
     assert nojs_page.get_by_text("Dune").first.is_visible()
 
 
+def test_search_query_and_button_stay_above_filters_when_narrow(live_url, browser):
+    context = browser.new_context(viewport={"width": 320, "height": 640})
+    page = context.new_page()
+    try:
+        page.goto(live_url + "/search?q=dune")
+        form = page.locator(".search-form")
+        controls = [
+            form.locator('input[name="q"]'),
+            form.locator("#search-type"),
+            form.locator("#search-location"),
+            form.get_by_role("button", name="Search"),
+        ]
+        boxes = [control.bounding_box() for control in controls]
+        assert all(box is not None for box in boxes)
+        input_box, type_box, location_box, button_box = boxes
+        form_box = form.bounding_box()
+        assert form_box is not None
+        assert abs(input_box["y"] - button_box["y"]) < 1
+        assert abs(input_box["x"] - form_box["x"]) < 1
+        assert abs(button_box["x"] + button_box["width"] - form_box["x"] - form_box["width"]) < 1
+        assert input_box["x"] < button_box["x"]
+        assert abs(type_box["y"] - location_box["y"]) < 1
+        assert type_box["y"] >= button_box["y"] + button_box["height"]
+        assert type_box["x"] < location_box["x"]
+    finally:
+        context.close()
+
+
+@pytest.mark.parametrize("width", [712, 834, 900])
+def test_search_controls_stay_ordered_when_they_fit(live_url, browser, width):
+    context = browser.new_context(viewport={"width": width, "height": 800})
+    page = context.new_page()
+    try:
+        page.goto(live_url + "/search?q=dune")
+        form = page.locator(".search-form")
+        controls = [
+            form.locator('input[name="q"]'),
+            form.locator("#search-type"),
+            form.locator("#search-location"),
+            form.get_by_role("button", name="Search"),
+        ]
+        boxes = [control.bounding_box() for control in controls]
+        assert all(box is not None for box in boxes)
+        input_box, type_box, location_box, button_box = boxes
+        assert all(abs(box["y"] - input_box["y"]) < 1 for box in boxes[1:])
+        assert input_box["x"] < type_box["x"] < location_box["x"] < button_box["x"]
+    finally:
+        context.close()
+
+
+def test_search_form_stays_on_one_row_on_desktop(live_url, browser):
+    context = browser.new_context(viewport={"width": 1280, "height": 800})
+    page = context.new_page()
+    try:
+        page.goto(live_url + "/search?q=dune")
+        form = page.locator(".search-form")
+        controls = [
+            form.locator('input[name="q"]'),
+            form.locator("#search-type"),
+            form.locator("#search-location"),
+            form.get_by_role("button", name="Search"),
+        ]
+        boxes = [control.bounding_box() for control in controls]
+        assert all(box is not None for box in boxes)
+        input_box, type_box, location_box, button_box = boxes
+        assert all(abs(box["y"] - input_box["y"]) < 1 for box in boxes[1:])
+        assert input_box["x"] < type_box["x"] < location_box["x"] < button_box["x"]
+    finally:
+        context.close()
+
+
 def test_tabs_use_roving_tabindex(live_url, page):
     page.goto(live_url + "/item/book/1")
     tabs = page.get_by_role("tab")

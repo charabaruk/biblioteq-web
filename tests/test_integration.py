@@ -35,8 +35,8 @@ def test_search_without_query_shows_heading_and_skips_search(client, monkeypatch
     response = client.get("/search")
 
     assert response.status_code == 200
-    assert '<h1>Search the collection</h1>' in response.text
-    assert response.text.index("<h1>") < response.text.index('class="search-form"')
+    assert "<h1>Search the collection</h1>" in response.text
+    assert response.text.index("<h1>") < response.text.index('class="search-form')
     assert 'class="count"' not in response.text
 
 
