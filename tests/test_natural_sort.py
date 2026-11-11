@@ -1,8 +1,9 @@
 import sqlite3
+from dataclasses import replace
 from pathlib import Path
 
 import pytest
-from sqlalchemy import create_engine, text
+from sqlalchemy import create_engine, event, text
 
 from app import repository
 from app.repository import title_sort_key
@@ -162,6 +163,77 @@ def test_periodical_series_group_before_pagination(conn_and_catalog, type_key, n
     assert [item["id"] for item in first.items + second.items] == [2, 5, 4]
     assert second.items[0]["series_url"].endswith("/by-title/Shared")
     assert repository.browse_periodical_series(conn, spec, 99, 2, natural).page == 2
+
+
+@pytest.mark.parametrize("missing_field", ["identifier", "issue"])
+def test_series_queries_require_periodical_fields(conn_and_catalog, missing_field):
+    conn, catalog = conn_and_catalog
+    spec = replace(catalog.types["journal"], **{missing_field: None})
+
+    result = repository.browse_periodical_series(conn, spec, 1, 10)
+    assert result.items == []
+    assert result.total == 0
+    assert repository.get_series(conn, catalog, spec, "ISSN", 1, 10) is None
+
+
+def test_series_lookup_for_book_and_other_types(conn_and_catalog):
+    conn, catalog = conn_and_catalog
+    book = catalog.types["book"]
+    other = replace(book, key="other")
+
+    assert repository.get_series(conn, catalog, book, "Series", 1, 10) is None
+    assert repository.get_series(conn, catalog, other, "Series", 1, 10) is None
+
+
+def test_periodical_series_breaks_issue_ties_by_primary_key(conn_and_catalog):
+    conn, catalog = conn_and_catalog
+    conn.execute(
+        text(
+            "INSERT INTO journal (myoid, id, title, issuevolume, issueno, display_number, pdate) "
+            "VALUES (:oid, :identifier, :title, :volume, :issue, :display, :published)"
+        ),
+        [
+            {
+                "oid": 20,
+                "identifier": "TIE",
+                "title": "Tied",
+                "volume": 1,
+                "issue": 1,
+                "display": 1,
+                "published": "2024-01-01",
+            },
+            {
+                "oid": 21,
+                "identifier": "TIE",
+                "title": "Tied",
+                "volume": 1,
+                "issue": 1,
+                "display": 1,
+                "published": "2024-01-01",
+            },
+        ],
+    )
+    conn.commit()
+
+    result = repository.browse_periodical_series(conn, catalog.types["journal"], 1, 20)
+    assert [item["id"] for item in result.items if item["identifier"] == "TIE"] == [20]
+
+
+def test_periodical_series_skips_issue_removed_before_card_fetch(conn_and_catalog):
+    conn, catalog = conn_and_catalog
+
+    def remove_selected_issue(connection, cursor, statement, parameters, context, executemany):
+        if " IN (" in statement:
+            connection.exec_driver_sql("DELETE FROM journal WHERE myoid = 5")
+
+    event.listen(conn, "before_cursor_execute", remove_selected_issue)
+    try:
+        result = repository.browse_periodical_series(conn, catalog.types["journal"], 1, 20)
+    finally:
+        event.remove(conn, "before_cursor_execute", remove_selected_issue)
+
+    assert result.total == 2
+    assert [item["id"] for item in result.items] == [10]
 
 
 def test_periodical_search_filters_exact_identifier_and_paginates(conn_and_catalog):

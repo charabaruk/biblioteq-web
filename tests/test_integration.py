@@ -93,6 +93,12 @@ def test_periodical_series_page_renders_issue_cover(client):
     assert 'src="/cover/journal/5"' in response.text
 
 
+@pytest.mark.parametrize("type_key", ["journal", "magazine"])
+def test_periodical_series_page_rejects_missing_identifier(client, type_key):
+    response = client.get(f"/series/{type_key}/missing")
+    assert response.status_code == 404
+
+
 def test_periodical_series_page_paginates_in_issue_order(client, monkeypatch):
     monkeypatch.setenv("BIBLIOTEQ_PAGE_SIZE", "1")
     from app import config
@@ -207,6 +213,22 @@ def test_series_browse_handles_reserved_identifier(client, title_series_type):
     assert 'data-id="9001"' not in response.text
     assert 'name="kind" value="id"' in response.text
     assert 'name="value"' in response.text
+
+
+@pytest.mark.parametrize("kind", ["id", "title"])
+def test_typed_series_rejects_missing_values(client, title_series_type, kind):
+    response = client.get(f"/series/{title_series_type}", params={"kind": kind, "value": "missing"})
+    assert response.status_code == 404
+
+
+def test_typed_series_rejects_non_periodicals_and_ambiguous_titles(client, title_series_type):
+    book = client.get("/series/book", params={"kind": "id", "value": "ISSN-A"})
+    assert book.status_code == 404
+
+    choices = client.get(
+        f"/series/{title_series_type}", params={"kind": "title", "value": "Many Identifiers"}
+    )
+    assert choices.status_code == 404
 
 
 def test_series_browse_ignores_location_and_keeps_navigation(
