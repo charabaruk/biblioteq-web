@@ -80,6 +80,8 @@ h2 .more { font-size: 0.85rem; font-weight: normal; margin-left: 0.5rem; }
 .card-sub, .card-meta { font-size: 0.85rem; color: var(--muted); }
 
 .pagination { display: flex; justify-content: center; gap: 1.5rem; margin: 1.5rem 0; }
+.series-title, .series-issues .card-title, .series-choices a { overflow-wrap: anywhere; }
+.series-choices a { display: inline-block; padding: 0.5rem 0; }
 
 .detail { display: grid; grid-template-columns: minmax(160px, 260px) 1fr; gap: 2rem; }
 .covers { display: flex; flex-direction: column; gap: 1rem; }

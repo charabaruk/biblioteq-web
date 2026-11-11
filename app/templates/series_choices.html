@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block title %}{{ title }} - {{ site_title }}{% endblock %}
+{% block content %}
+<h1 class="series-title">{{ title }}</h1>
+<h2>{{ _('Select a series') }}</h2>
+<ul class="series-choices">
+  {% for identifier, url in options %}
+  <li><a href="{{ base }}{{ url }}">{{ title }}: ISSN {{ identifier if identifier else _('(empty)') }}</a></li>
+  {% endfor %}
+</ul>
+{% endblock %}

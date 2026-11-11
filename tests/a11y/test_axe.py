@@ -23,6 +23,9 @@ PAGES = {
     "location-empty": "/location/Reading%20Room",
     "item": "/item/book/1",
     "item-no-description": "/item/book/2",
+    "series-no-issn": "/series/journal/by-title/Hidden%20Journal%20Values",
+    "series-choices": "/series/journal/by-title/Shared%20Journal",
+    "item-no-issn": "/item/journal/1",
     "not-found-item": "/item/book/9999",
     "not-found-type": "/browse/nope",
 }

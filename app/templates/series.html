@@ -2,11 +2,11 @@
 {% from "_components.html" import card, pagination with context %}
 {% block title %}{{ series.title }} - {{ site_title }}{% endblock %}
 {% block content %}
-<h1>{{ series.title }}</h1>
+<h1 class="series-title">{{ series.title }}</h1>
 <p class="count">
   {% trans count=series.items.total %}{{ count }} item{% pluralize %}{{ count }} items{% endtrans %}
 </p>
-<form action="{{ base }}/series/{{ spec.key }}/{{ series.id }}" method="get" class="sort-form">
+<form action="{{ base }}{{ series_action }}" method="get" class="sort-form">
   <label for="issue-sort">{{ _('Issue order') }}</label>
   <select id="issue-sort" name="sort">
     <option value="asc" {{ 'selected' if sort_direction == 'asc' }}>{{ _('Oldest first') }}</option>
@@ -15,6 +15,6 @@
   {% if location %}<input type="hidden" name="location" value="{{ location }}">{% endif %}
   <button type="submit">{{ _('Apply') }}</button>
 </form>
-<div class="grid">{% for it in series.items.items %}{{ card(it, spec.label) }}{% endfor %}</div>
+<div class="grid series-issues">{% for it in series.items.items %}{{ card(it, spec.label) }}{% endfor %}</div>
 {{ pagination(series.items, pager) }}
 {% endblock %}

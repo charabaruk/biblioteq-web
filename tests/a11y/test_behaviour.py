@@ -28,6 +28,49 @@ def test_search_works_without_javascript(live_url, nojs_page):
     assert nojs_page.get_by_text("Dune").first.is_visible()
 
 
+def test_periodical_series_navigation_without_javascript(live_url, nojs_page):
+    nojs_page.goto(live_url + "/item/journal/1")
+    nojs_page.get_by_role("link", name="View series").click()
+    assert nojs_page.url.endswith("/series/journal/by-title/Hidden%20Journal%20Values")
+    assert nojs_page.get_by_role("heading", name="Hidden Journal Values").is_visible()
+
+    nojs_page.goto(live_url + "/series/journal/by-title/Shared%20Journal")
+    nojs_page.get_by_role("link", name="Shared Journal: ISSN ISSN-A").click()
+    assert nojs_page.url.endswith("/series/journal/ISSN-A")
+
+
+def test_periodical_series_sort_with_encoded_title(live_url, nojs_page):
+    nojs_page.goto(live_url + "/item/journal/9006")
+    nojs_page.get_by_role("link", name="View series").click()
+    assert nojs_page.get_by_role("heading", name="Science / News & Notes").is_visible()
+    form = nojs_page.locator(".sort-form")
+    form.get_by_label("Issue order").select_option("desc")
+    form.get_by_role("button", name="Apply").click()
+    assert nojs_page.url.endswith(
+        "/series/journal/by-title/Science%20%2F%20News%20%26%20Notes?sort=desc"
+    )
+    assert nojs_page.get_by_role("heading", name="Science / News & Notes").is_visible()
+
+
+@pytest.mark.parametrize("width", [320, 1280])
+def test_periodical_series_pages_reflow(live_url, browser, width):
+    context = browser.new_context(viewport={"width": width, "height": 800})
+    page = context.new_page()
+    try:
+        for path in (
+            "/series/journal/by-title/Hidden%20Journal%20Values",
+            "/series/journal/by-title/Shared%20Journal",
+            "/series/journal/by-title/" + "A" * 180,
+            "/series/journal/by-title/" + "B" * 180,
+        ):
+            page.goto(live_url + path)
+            assert page.evaluate(
+                "document.documentElement.scrollWidth <= document.documentElement.clientWidth"
+            )
+    finally:
+        context.close()
+
+
 def test_search_query_and_button_stay_above_filters_when_narrow(live_url, browser):
     context = browser.new_context(viewport={"width": 320, "height": 640})
     page = context.new_page()
