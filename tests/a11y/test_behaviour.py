@@ -28,6 +28,77 @@ def test_search_works_without_javascript(live_url, nojs_page):
     assert nojs_page.get_by_text("Dune").first.is_visible()
 
 
+def test_search_query_and_button_stay_above_filters_when_narrow(live_url, browser):
+    context = browser.new_context(viewport={"width": 320, "height": 640})
+    page = context.new_page()
+    try:
+        page.goto(live_url + "/search?q=dune")
+        form = page.locator(".search-form")
+        controls = [
+            form.locator('input[name="q"]'),
+            form.locator("#search-type"),
+            form.locator("#search-location"),
+            form.get_by_role("button", name="Search"),
+        ]
+        boxes = [control.bounding_box() for control in controls]
+        assert all(box is not None for box in boxes)
+        input_box, type_box, location_box, button_box = boxes
+        form_box = form.bounding_box()
+        assert form_box is not None
+        assert abs(input_box["y"] - button_box["y"]) < 1
+        assert abs(input_box["x"] - form_box["x"]) < 1
+        assert abs(button_box["x"] + button_box["width"] - form_box["x"] - form_box["width"]) < 1
+        assert input_box["x"] < button_box["x"]
+        assert abs(type_box["y"] - location_box["y"]) < 1
+        assert type_box["y"] >= button_box["y"] + button_box["height"]
+        assert type_box["x"] < location_box["x"]
+    finally:
+        context.close()
+
+
+@pytest.mark.parametrize("width", [712, 834, 900])
+def test_search_controls_stay_ordered_when_they_fit(live_url, browser, width):
+    context = browser.new_context(viewport={"width": width, "height": 800})
+    page = context.new_page()
+    try:
+        page.goto(live_url + "/search?q=dune")
+        form = page.locator(".search-form")
+        controls = [
+            form.locator('input[name="q"]'),
+            form.locator("#search-type"),
+            form.locator("#search-location"),
+            form.get_by_role("button", name="Search"),
+        ]
+        boxes = [control.bounding_box() for control in controls]
+        assert all(box is not None for box in boxes)
+        input_box, type_box, location_box, button_box = boxes
+        assert all(abs(box["y"] - input_box["y"]) < 1 for box in boxes[1:])
+        assert input_box["x"] < type_box["x"] < location_box["x"] < button_box["x"]
+    finally:
+        context.close()
+
+
+def test_search_form_stays_on_one_row_on_desktop(live_url, browser):
+    context = browser.new_context(viewport={"width": 1280, "height": 800})
+    page = context.new_page()
+    try:
+        page.goto(live_url + "/search?q=dune")
+        form = page.locator(".search-form")
+        controls = [
+            form.locator('input[name="q"]'),
+            form.locator("#search-type"),
+            form.locator("#search-location"),
+            form.get_by_role("button", name="Search"),
+        ]
+        boxes = [control.bounding_box() for control in controls]
+        assert all(box is not None for box in boxes)
+        input_box, type_box, location_box, button_box = boxes
+        assert all(abs(box["y"] - input_box["y"]) < 1 for box in boxes[1:])
+        assert input_box["x"] < type_box["x"] < location_box["x"] < button_box["x"]
+    finally:
+        context.close()
+
+
 def test_tabs_use_roving_tabindex(live_url, page):
     page.goto(live_url + "/item/book/1")
     tabs = page.get_by_role("tab")
@@ -100,3 +171,151 @@ def test_page_reflows_at_320px(live_url, browser):
             assert overflow <= 0, f"{path} scrolls horizontally by {overflow}px"
     finally:
         context.close()
+
+
+def test_mobile_header_sticks_to_top_when_scrolling(live_url, browser):
+    context = browser.new_context(viewport={"width": 390, "height": 640})
+    page = context.new_page()
+    try:
+        page.goto(live_url + "/")
+        page.evaluate("document.body.style.minHeight = '200vh'")
+        page.evaluate("window.scrollTo(0, 200)")
+        assert page.evaluate("window.scrollY") > 0
+        assert (
+            page.locator(".site-header").evaluate("el => getComputedStyle(el).position") == "sticky"
+        )
+        assert page.locator(".site-header").evaluate(
+            "el => Math.abs(el.getBoundingClientRect().top) < 1"
+        )
+    finally:
+        context.close()
+
+
+@pytest.mark.parametrize("width", [712, 834])
+def test_tablet_header_uses_mobile_flyout(live_url, browser, width):
+    context = browser.new_context(viewport={"width": width, "height": 1138})
+    page = context.new_page()
+    try:
+        page.goto(live_url + "/")
+        assert page.locator(".menu-toggle").is_visible()
+        assert not page.locator(".header-menu").evaluate("el => el.open")
+        assert (
+            page.locator(".site-header").evaluate("el => getComputedStyle(el).position") == "sticky"
+        )
+    finally:
+        context.close()
+
+
+def test_mobile_header_flyout_contains_navigation_and_language(live_url, browser):
+    context = browser.new_context(viewport={"width": 390, "height": 844})
+    page = context.new_page()
+    try:
+        page.goto(live_url + "/")
+        menu = page.locator(".header-menu")
+        toggle = page.locator(".menu-toggle")
+        assert not menu.evaluate("el => el.open")
+        assert toggle.is_visible()
+        assert toggle.get_attribute("aria-label") == "Menu"
+        assert toggle.inner_text().strip() == ""
+        icon = toggle.locator("img.menu-icon[aria-hidden=true]")
+        assert icon.get_attribute("src").endswith("/static/menu.svg")
+        assert icon.get_attribute("alt") == ""
+        assert icon.evaluate("el => el.complete && el.naturalWidth > 0")
+        assert toggle.evaluate("el => getComputedStyle(el).borderWidth") == "0px"
+        assert toggle.evaluate("el => el.offsetWidth >= 44 && el.offsetHeight >= 44")
+        main_top = page.locator("main").evaluate("el => el.getBoundingClientRect().top")
+
+        toggle.click()
+        assert page.locator("main").evaluate("el => el.getBoundingClientRect().top") == main_top
+        assert page.get_by_role("link", name="Books").is_visible()
+        assert (
+            page.locator(".menu-panel nav").evaluate("el => getComputedStyle(el).flexDirection")
+            == "column"
+        )
+        assert page.locator(".menu-panel nav a").evaluate_all(
+            "links => links.every(link => link.getBoundingClientRect().height >= 44)"
+        )
+        assert (
+            page.locator(".search-page-link").evaluate("el => getComputedStyle(el).borderTopStyle")
+            == "solid"
+        )
+        assert page.get_by_role("link", name="Search").is_visible()
+        assert page.get_by_label("Language").is_visible()
+
+        page.keyboard.press("Escape")
+        assert not menu.evaluate("el => el.open")
+        assert toggle.evaluate("el => el === document.activeElement")
+    finally:
+        context.close()
+
+
+def test_mobile_header_flyout_scrolls_independently(live_url, browser):
+    context = browser.new_context(viewport={"width": 390, "height": 480})
+    page = context.new_page()
+    try:
+        page.goto(live_url + "/")
+        page.locator(".menu-toggle").click()
+        page.locator(".menu-panel nav").evaluate(
+            """nav => {
+                for (let index = 0; index < 20; index += 1) {
+                    const link = document.createElement("a");
+                    link.href = "#";
+                    link.textContent = `Extra type ${index}`;
+                    nav.append(link);
+                }
+            }"""
+        )
+        panel = page.locator(".menu-panel")
+        dimensions = panel.evaluate(
+            """el => ({
+                overflowY: getComputedStyle(el).overflowY,
+                clientHeight: el.clientHeight,
+                scrollHeight: el.scrollHeight,
+            })"""
+        )
+        assert dimensions["overflowY"] == "auto"
+        assert dimensions["scrollHeight"] > dimensions["clientHeight"]
+
+        panel.evaluate("el => el.scrollTop = 120")
+        assert panel.evaluate("el => el.scrollTop") > 0
+        assert page.evaluate("window.scrollY") == 0
+    finally:
+        context.close()
+
+
+def test_mobile_header_flyout_closes_on_outside_click(live_url, browser):
+    context = browser.new_context(viewport={"width": 390, "height": 844})
+    page = context.new_page()
+    try:
+        page.goto(live_url + "/")
+        page.locator(".menu-toggle").click()
+        assert page.locator(".header-menu").evaluate("el => el.open")
+        page.mouse.click(10, 800)
+        assert not page.locator(".header-menu").evaluate("el => el.open")
+    finally:
+        context.close()
+
+
+def test_mobile_header_flyout_works_without_javascript(live_url, nojs_page):
+    nojs_page.set_viewport_size({"width": 390, "height": 844})
+    nojs_page.goto(live_url + "/")
+    menu = nojs_page.locator(".header-menu")
+    assert menu.evaluate("el => el.open")
+    assert nojs_page.get_by_role("link", name="Books").is_visible()
+    nojs_page.locator(".menu-toggle").click()
+    assert not menu.evaluate("el => el.open")
+    nojs_page.locator(".menu-toggle").click()
+    assert nojs_page.get_by_role("link", name="Books").is_visible()
+    assert nojs_page.get_by_role("link", name="Search").is_visible()
+    assert nojs_page.get_by_label("Language").is_visible()
+
+
+def test_desktop_header_keeps_navigation_and_search_visible(live_url, page):
+    page.goto(live_url + "/")
+    assert (
+        page.locator(".site-header").evaluate("el => getComputedStyle(el).position") == "relative"
+    )
+    assert page.locator(".menu-toggle").is_hidden()
+    assert page.get_by_role("link", name="Books").is_visible()
+    assert page.locator(".search-mini input").is_visible()
+    assert page.locator(".search-page-link").is_hidden()
