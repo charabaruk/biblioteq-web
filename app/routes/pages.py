@@ -2,7 +2,7 @@
 
 import gettext
 from typing import Annotated, Literal
-from urllib.parse import urlencode, urlsplit
+from urllib.parse import quote, urlencode, urlsplit
 
 from fastapi import APIRouter, Depends, HTTPException, Path, Query, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
@@ -194,6 +194,168 @@ def browse(
             "result": result,
             "pager": f"/browse/{spec.key}?" + urlencode(pager_params),
             "type_labels": {k: v.label for k, v in catalog.types.items()},
+        },
+    )
+
+
+@router.get("/browse/{type_key}/by-series", response_class=HTMLResponse)
+def browse_series(
+    request: Request,
+    type_key: str,
+    page: PageNo = 1,
+    conn: Connection = Depends(get_conn),
+    catalog: Catalog = Depends(get_localized_catalog),
+):
+    spec = require_type(type_key, catalog)
+    if spec.key not in {"journal", "magazine"} or not spec.identifier or not spec.issue:
+        raise HTTPException(status_code=404, detail="Item not found")
+    settings = get_settings()
+    result = repository.browse_periodical_series(
+        conn, spec, page, settings.page_size, settings.title_sort
+    )
+    return templates.TemplateResponse(
+        request,
+        "browse.html",
+        {
+            "types": catalog.types.values(),
+            "spec": spec,
+            "result": result,
+            "series_view": True,
+            "pager": f"/browse/{spec.key}/by-series?",
+        },
+    )
+
+
+@router.get("/series/{type_key}", response_class=HTMLResponse)
+def series_by_key(
+    request: Request,
+    type_key: str,
+    kind: Literal["id", "title"],
+    value: str,
+    sort: Annotated[SortDirection, Query()] = "asc",
+    page: PageNo = 1,
+    conn: Connection = Depends(get_conn),
+    catalog: Catalog = Depends(get_localized_catalog),
+):
+    spec = require_type(type_key, catalog)
+    if spec.key not in {"journal", "magazine"}:
+        raise HTTPException(status_code=404, detail="Item not found")
+    settings = get_settings()
+    if kind == "title":
+        result = repository.get_series_by_title(
+            conn, catalog, spec, value, page, settings.page_size, sort, settings.title_sort
+        )
+    else:
+        result = repository.get_series(
+            conn, catalog, spec, value, page, settings.page_size, sort, settings.title_sort
+        )
+    if result is None or isinstance(result, list):
+        raise HTTPException(status_code=404, detail="Item not found")
+    action = f"/series/{spec.key}"
+    params = {"kind": kind, "value": value}
+    return templates.TemplateResponse(
+        request,
+        "series.html",
+        {
+            "types": catalog.types.values(),
+            "series": result,
+            "spec": spec,
+            "sort_direction": sort,
+            "series_action": action,
+            "series_key": params,
+            "pager": action + "?" + urlencode({**params, "sort": sort}),
+        },
+    )
+
+
+@router.get("/series/{type_key}/by-title/{title:path}", response_class=HTMLResponse)
+def series_by_title(
+    request: Request,
+    type_key: str,
+    title: str,
+    sort: Annotated[SortDirection, Query()] = "asc",
+    page: PageNo = 1,
+    conn: Connection = Depends(get_conn),
+    catalog: Catalog = Depends(get_localized_catalog),
+):
+    spec = require_type(type_key, catalog)
+    settings = get_settings()
+    result = repository.get_series_by_title(
+        conn, catalog, spec, title, page, settings.page_size, sort, settings.title_sort
+    )
+    if result is None:
+        raise HTTPException(status_code=404, detail="Item not found")
+
+    if isinstance(result, list):
+        if len(result) == 1:
+            target = (
+                f"{request.scope.get('root_path', '')}/series/{spec.key}/"
+                f"{quote(result[0], safe='')}"
+            )
+            params = {
+                key: request.query_params[key]
+                for key in ("sort", "page", "lang")
+                if key in request.query_params
+            }
+            if params:
+                target += "?" + urlencode(params)
+            return RedirectResponse(target)
+        return templates.TemplateResponse(
+            request,
+            "series_choices.html",
+            {
+                "types": catalog.types.values(),
+                "title": title,
+                "options": [
+                    (identifier, f"/series/{spec.key}/{quote(identifier, safe='')}")
+                    for identifier in result
+                ],
+            },
+        )
+
+    action = repository.series_title_url(spec, title)
+    return templates.TemplateResponse(
+        request,
+        "series.html",
+        {
+            "types": catalog.types.values(),
+            "series": result,
+            "spec": spec,
+            "sort_direction": sort,
+            "series_action": action,
+            "pager": action + "?" + urlencode({"sort": sort}),
+        },
+    )
+
+
+@router.get("/series/{type_key}/{series_id:path}", response_class=HTMLResponse)
+def series(
+    request: Request,
+    type_key: str,
+    series_id: str,
+    sort: Annotated[SortDirection, Query()] = "asc",
+    page: PageNo = 1,
+    conn: Connection = Depends(get_conn),
+    catalog: Catalog = Depends(get_localized_catalog),
+):
+    spec = require_type(type_key, catalog)
+    settings = get_settings()
+    series = repository.get_series(
+        conn, catalog, spec, series_id, page, settings.page_size, sort, settings.title_sort
+    )
+    if series is None:
+        raise HTTPException(status_code=404, detail="Item not found")
+    action = f"/series/{spec.key}/{quote(series.id, safe='')}"
+    return templates.TemplateResponse(
+        request,
+        "series.html",
+        {
+            "types": catalog.types.values(),
+            "series": series,
+            "spec": spec,
+            "sort_direction": sort,
+            "series_action": action,
+            "pager": action + "?" + urlencode({"sort": sort}),
         },
     )
 

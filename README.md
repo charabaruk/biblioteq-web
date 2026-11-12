@@ -71,6 +71,7 @@ All settings are environment variables; see [.env.example](.env.example).
 | `/` | Search form and recently added items |
 | `/search?q=&type=&location=&page=` | Search across item types, optionally at one location |
 | `/browse/{type}?location=&page=` | Browse one item type, optionally at one location |
+| `/browse/{type}/by-series?page=` | Browse journal or magazine series by their newest issues |
 | `/location/{name}` | Recently added items at a location; `UNKNOWN` lists items with none |
 | `/item/{type}/{id}` | Item details and availability |
 | `/cover/{type}/{id}?side=front\|back` | Cover image from the database |

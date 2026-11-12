@@ -11,6 +11,7 @@
     <p class="kind"><a href="{{ base }}/browse/{{ item.spec.key }}">{{ item.spec.label }}</a></p>
     <h1>{{ texts.display_title }}</h1>
     {% if texts.subtitle %}<h2 class="subtitle">{{ texts.subtitle }}</h2>{% endif %}
+    {% if item.series_url %}<p><a href="{{ base }}{{ item.series_url }}">{{ _('View series') }}</a></p>{% endif %}
     {% set a = item.availability %}
     {% if a %}
     <p class="availability {{ 'in' if a.available else 'out' if a.available == 0 else '' }}">

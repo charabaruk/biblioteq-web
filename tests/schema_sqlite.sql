@@ -11,12 +11,12 @@ CREATE TABLE item_borrower (
   memberid TEXT, copyid TEXT, reserved_date TEXT, duedate TEXT
 );
 CREATE TABLE journal (
-  myoid INTEGER PRIMARY KEY, title TEXT NOT NULL, location TEXT, pdate TEXT,
+  myoid INTEGER PRIMARY KEY, id TEXT, title TEXT NOT NULL, location TEXT, pdate TEXT,
   display_number INTEGER, issueno INTEGER NOT NULL DEFAULT 0,
-  issuevolume INTEGER NOT NULL DEFAULT 0
+  issuevolume INTEGER NOT NULL DEFAULT 0, front_cover BLOB
 );
 CREATE TABLE magazine (
-  myoid INTEGER PRIMARY KEY, title TEXT NOT NULL, location TEXT, pdate TEXT,
+  myoid INTEGER PRIMARY KEY, id TEXT, title TEXT NOT NULL, location TEXT, pdate TEXT,
   display_number INTEGER, issueno INTEGER NOT NULL DEFAULT 0,
   issuevolume INTEGER NOT NULL DEFAULT 0
 );
@@ -78,6 +78,12 @@ INSERT INTO journal (myoid, title, display_number, issueno, issuevolume) VALUES
 INSERT INTO magazine (myoid, title, display_number, issueno, issuevolume) VALUES
  (1, 'Hidden Magazine Values', -1, 0, 0),
  (2, 'Visible Magazine Values', 42, 3, 2025);
+INSERT INTO journal (myoid, id, title, display_number, issueno, issuevolume, front_cover) VALUES
+ (5, 'ISSN-JOURNAL', 'Series Journal', 1, 2, 2025, X'01'),
+ (6, 'ISSN-JOURNAL', 'Series Journal', 2, 1, 2024, NULL);
+INSERT INTO magazine (myoid, id, title, display_number, issueno, issuevolume) VALUES
+ (3, 'ISSN-MAGAZINE', 'Series Magazine', 1, 2, 2025),
+ (4, 'ISSN-MAGAZINE', 'Series Magazine', 2, 1, 2024);
 INSERT INTO book_copy_info (item_oid, copyid, status, condition, originality, notes)
 VALUES (1, 'barcode-1', 'UNKNOWN', ' UNKNOWN ', 'UNKNOWN', 'UNKNOWN');
 

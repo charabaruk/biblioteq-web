@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: biblioteq-web 0.3.0\n"
 "Report-Msgid-Bugs-To: https://github.com/charabaruk/biblioteq-web/issues\n"
-"POT-Creation-Date: 2026-11-11 10:29-0500\n"
+"POT-Creation-Date: 2026-11-11 17:42-0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -99,7 +99,7 @@ msgstr ""
 
 #: app/item_types.py:172 app/item_types.py:257 app/item_types.py:349
 #: app/item_types.py:424 app/item_types.py:501 app/item_types.py:577
-#: app/templates/base.html:31
+#: app/templates/base.html:30
 msgid "Language"
 msgstr ""
 
@@ -566,53 +566,73 @@ msgstr ""
 msgid "Next"
 msgstr ""
 
-#: app/templates/base.html:18
+#: app/templates/base.html:16
 msgid "Menu"
 msgstr ""
 
-#: app/templates/base.html:25
+#: app/templates/base.html:24
 msgctxt "placeholder"
 msgid "Search"
 msgstr ""
 
-#: app/templates/base.html:25 app/templates/base.html:27
-#: app/templates/index.html:7 app/templates/search.html:6
+#: app/templates/base.html:24 app/templates/base.html:26
+#: app/templates/index.html:7 app/templates/search.html:8
 msgctxt "aria-label"
 msgid "Search"
 msgstr ""
 
-#: app/templates/base.html:35 app/templates/browse.html:14
+#: app/templates/base.html:34 app/templates/browse.html:20
+#: app/templates/series.html:20
 msgid "Apply"
 msgstr ""
 
+#: app/templates/browse.html:7
+msgid "Browse view"
+msgstr ""
+
 #: app/templates/browse.html:8
+msgid "Issues"
+msgstr ""
+
+#: app/templates/browse.html:9
+msgid "Series"
+msgstr ""
+
+#: app/templates/browse.html:14 app/templates/series.html:14
 msgid "Issue order"
 msgstr ""
 
-#: app/templates/browse.html:10
+#: app/templates/browse.html:16 app/templates/series.html:16
 msgid "Oldest first"
 msgstr ""
 
-#: app/templates/browse.html:11
+#: app/templates/browse.html:17 app/templates/series.html:17
 msgid "Newest first"
 msgstr ""
 
-#: app/templates/browse.html:19 app/templates/location.html:3
+#: app/templates/browse.html:25 app/templates/location.html:3
 #: app/templates/location.html:5
 msgid "Unknown location"
 msgstr ""
 
-#: app/templates/browse.html:19 app/templates/location.html:3
+#: app/templates/browse.html:25 app/templates/location.html:3
 #: app/templates/location.html:5
 #, python-format
 msgid "Location: %(name)s"
 msgstr ""
 
-#: app/templates/browse.html:20
+#: app/templates/browse.html:26
 msgid "Clear filter"
 msgstr ""
 
-#: app/templates/browse.html:24
+#: app/templates/browse.html:31
+#, python-format
+msgid "%(count)s series"
+msgid_plural "%(count)s series"
+msgstr[0] ""
+msgstr[1] ""
+
+#: app/templates/browse.html:33 app/templates/series.html:7
 #, python-format
 msgid "%(count)s item"
 msgid_plural "%(count)s items"
@@ -623,7 +643,7 @@ msgstr[1] ""
 msgid "Back to the collection"
 msgstr ""
 
-#: app/templates/index.html:5
+#: app/templates/index.html:5 app/templates/search.html:5
 msgid "Search the collection"
 msgstr ""
 
@@ -631,16 +651,16 @@ msgstr ""
 msgid "Title, author, ISBN, ISSN..."
 msgstr ""
 
-#: app/templates/index.html:8 app/templates/search.html:7
+#: app/templates/index.html:8 app/templates/search.html:12
 msgctxt "aria-label"
 msgid "Item type"
 msgstr ""
 
-#: app/templates/index.html:10 app/templates/search.html:9
+#: app/templates/index.html:10 app/templates/search.html:14
 msgid "All types"
 msgstr ""
 
-#: app/templates/index.html:13 app/templates/search.html:19
+#: app/templates/index.html:13 app/templates/search.html:9
 msgctxt "button"
 msgid "Search"
 msgstr ""
@@ -659,35 +679,39 @@ msgstr ""
 msgid "Back cover of %(title)s"
 msgstr ""
 
-#: app/templates/item.html:18
+#: app/templates/item.html:14
+msgid "View series"
+msgstr ""
+
+#: app/templates/item.html:19
 #, python-format
 msgid "%(count)s copy owned"
 msgid_plural "%(count)s copies owned"
 msgstr[0] ""
 msgstr[1] ""
 
-#: app/templates/item.html:20
+#: app/templates/item.html:21
 #, python-format
 msgid "Available: %(available)s of %(total)s"
 msgstr ""
 
-#: app/templates/item.html:22
+#: app/templates/item.html:23
 #, python-format
 msgid "All %(count)s copy is checked out"
 msgid_plural "All %(count)s copies are checked out"
 msgstr[0] ""
 msgstr[1] ""
 
-#: app/templates/item.html:28
+#: app/templates/item.html:29
 msgctxt "aria-label"
 msgid "Item sections"
 msgstr ""
 
-#: app/templates/item.html:36
+#: app/templates/item.html:37
 msgid "This section could not be loaded."
 msgstr ""
 
-#: app/templates/item.html:38
+#: app/templates/item.html:39
 #, python-format
 msgid "Show %(label)s"
 msgstr ""
@@ -701,23 +725,31 @@ msgstr ""
 msgid "Search: %(query)s"
 msgstr ""
 
-#: app/templates/search.html:12
+#: app/templates/search.html:17
 msgctxt "aria-label"
 msgid "Location"
 msgstr ""
 
-#: app/templates/search.html:14
+#: app/templates/search.html:19
 msgid "All locations"
 msgstr ""
 
-#: app/templates/search.html:17
+#: app/templates/search.html:22
 msgid "Unknown"
 msgstr ""
 
-#: app/templates/search.html:22
+#: app/templates/search.html:28
 #, python-format
 msgid "%(count)s result"
 msgid_plural "%(count)s results"
 msgstr[0] ""
 msgstr[1] ""
+
+#: app/templates/series_choices.html:5
+msgid "Select a series"
+msgstr ""
+
+#: app/templates/series_choices.html:8
+msgid "(empty)"
+msgstr ""
 

@@ -24,14 +24,27 @@ def live_url(tmp_path_factory, tabbed_types) -> str:
     import uvicorn
 
     from app import config, db, deps, repository
+    from app.item_types import ITEM_TYPES
 
     path = tmp_path_factory.mktemp("a11y") / "library.db"
     with sqlite3.connect(path) as conn:
         conn.executescript((Path(__file__).parent.parent / "schema_sqlite.sql").read_text())
+        conn.executemany(
+            "INSERT INTO journal (myoid, title, id) VALUES (?, ?, ?)",
+            [
+                (9001, "Shared Journal", "ISSN-A"),
+                (9002, "Shared Journal", "ISSN-B"),
+                (9003, "A" * 180, None),
+                (9004, "B" * 180, "ISSN-A"),
+                (9005, "B" * 180, "ISSN-B"),
+                (9006, "Science / News & Notes", None),
+            ],
+        )
 
     patch = pytest.MonkeyPatch()
     patch.setenv("BIBLIOTEQ_DB_URL", f"sqlite:///{path}")
-    patch.setattr(repository, "ITEM_TYPES", tabbed_types)
+    periodicals = tuple(spec for spec in ITEM_TYPES if spec.key in {"journal", "magazine"})
+    patch.setattr(repository, "ITEM_TYPES", (*tabbed_types, *periodicals))
     for cached in (config.get_settings, db.get_engine):
         cached.cache_clear()
     deps._catalog = None

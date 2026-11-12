@@ -16,6 +16,7 @@ PAGES = {
     "search-no-results": "/search?q=zzzznothing",
     "browse": "/browse/book",
     "browse-periodicals": "/browse/journal",
+    "browse-periodical-series": "/browse/journal/by-series",
     "browse-location": "/browse/book?location=Orphan%20Room",
     "search-location": "/search?location=Orphan%20Room",
     "location": "/location/Shelf%20A",
@@ -23,6 +24,9 @@ PAGES = {
     "location-empty": "/location/Reading%20Room",
     "item": "/item/book/1",
     "item-no-description": "/item/book/2",
+    "series-no-issn": "/series/journal/by-title/Hidden%20Journal%20Values",
+    "series-choices": "/series/journal/by-title/Shared%20Journal",
+    "item-no-issn": "/item/journal/1",
     "not-found-item": "/item/book/9999",
     "not-found-type": "/browse/nope",
 }

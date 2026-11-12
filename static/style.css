@@ -45,6 +45,9 @@ main { max-width: 1100px; margin: 0 auto; padding: 1.5rem; }
 .hero { text-align: center; padding: 1.5rem 0; }
 .search-form { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1rem; }
 .sort-form { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; margin-bottom: 1rem; }
+.browse-views { display: flex; gap: 0.25rem; margin: 1rem 0; border-bottom: 1px solid var(--border); }
+.browse-views a { padding: 0.4rem 0.9rem; border: 1px solid transparent; border-bottom: 0; color: inherit; }
+.browse-views a[aria-current=page] { background: var(--card); border-color: var(--border); font-weight: 600; }
 .hero .search-form { justify-content: center; }
 .search-form input[type=search] { flex: 1; min-width: 12rem; }
 .search-page-form {
@@ -80,6 +83,8 @@ h2 .more { font-size: 0.85rem; font-weight: normal; margin-left: 0.5rem; }
 .card-sub, .card-meta { font-size: 0.85rem; color: var(--muted); }
 
 .pagination { display: flex; justify-content: center; gap: 1.5rem; margin: 1.5rem 0; }
+.series-title, .series-issues .card-title, .series-list .card-title, .series-choices a { overflow-wrap: anywhere; }
+.series-choices a { display: inline-block; padding: 0.5rem 0; }
 
 .detail { display: grid; grid-template-columns: minmax(160px, 260px) 1fr; gap: 2rem; }
 .covers { display: flex; flex-direction: column; gap: 1rem; }

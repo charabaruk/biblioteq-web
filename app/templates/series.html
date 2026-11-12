@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% from "_components.html" import card, pagination with context %}
+{% block title %}{{ series.title }} - {{ site_title }}{% endblock %}
+{% block content %}
+<h1 class="series-title">{{ series.title }}</h1>
+<p class="count">
+  {% trans count=series.items.total %}{{ count }} item{% pluralize %}{{ count }} items{% endtrans %}
+</p>
+<form action="{{ base }}{{ series_action }}" method="get" class="sort-form">
+  {% if series_key %}
+  <input type="hidden" name="kind" value="{{ series_key.kind }}">
+  <input type="hidden" name="value" value="{{ series_key.value }}">
+  {% endif %}
+  <label for="issue-sort">{{ _('Issue order') }}</label>
+  <select id="issue-sort" name="sort">
+    <option value="asc" {{ 'selected' if sort_direction == 'asc' }}>{{ _('Oldest first') }}</option>
+    <option value="desc" {{ 'selected' if sort_direction == 'desc' }}>{{ _('Newest first') }}</option>
+  </select>
+  {% if location %}<input type="hidden" name="location" value="{{ location }}">{% endif %}
+  <button type="submit">{{ _('Apply') }}</button>
+</form>
+<div class="grid series-issues">{% for it in series.items.items %}{{ card(it, spec.label) }}{% endfor %}</div>
+{{ pagination(series.items, pager) }}
+{% endblock %}
