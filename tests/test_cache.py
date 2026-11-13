@@ -1,11 +1,21 @@
+import json
 import os
 from concurrent.futures import ThreadPoolExecutor
 from threading import Event
 from uuid import uuid4
 
 import pytest
+from redis.exceptions import RedisError
 
-from app.cache import Cache, CacheUnavailable, LocalCacheBackend, make_cache_namespace
+from app.cache import (
+    Cache,
+    CacheUnavailable,
+    LocalCacheBackend,
+    RedisCacheBackend,
+    create_cache,
+    make_cache_namespace,
+)
+from app.config import Settings
 
 
 class Clock:
@@ -25,6 +35,61 @@ def make_cache(clock, *, freshness=10, max_stale=30, max_bytes=1024):
         wait_timeout_seconds=1,
         clock=clock,
     )
+
+
+class FakeRedis:
+    def __init__(self):
+        self.values = {}
+        self.fail_on = set()
+        self.closed = False
+
+    def _check(self, operation):
+        if operation in self.fail_on:
+            raise RedisError(f"{operation} failed")
+
+    def get(self, key):
+        self._check("get")
+        return self.values.get(key)
+
+    def set(self, key, value, *, nx, px):
+        self._check("set")
+        value = value.encode() if isinstance(value, str) else value
+        if nx and key in self.values:
+            return None
+        self.values[key] = value
+        return True
+
+    def delete(self, *keys):
+        self._check("delete")
+        for key in keys:
+            self.values.pop(key, None)
+
+    def eval(self, script, number_of_keys, *args):
+        self._check("eval")
+        if "PEXPIRE" in script:
+            key, owner, retry_ms = args
+            owner = owner.encode() if isinstance(owner, str) else owner
+            if self.values.get(key) != owner:
+                return 0
+            if int(retry_ms) > 0:
+                return 1
+            self.values.pop(key, None)
+            return 1
+
+        data_key, lease_key, owner, value, _ttl = args
+        owner = owner.encode() if isinstance(owner, str) else owner
+        if self.values.get(lease_key) != owner:
+            return 0
+        self.values[data_key] = value
+        self.values.pop(lease_key, None)
+        return 1
+
+    def close(self):
+        self.closed = True
+
+
+def encoded_entry(value, loaded_at=100.0):
+    return json.dumps({"version": 1, "loaded_at": loaded_at, "value": value}).encode()
 
 
 def test_local_cache_returns_isolated_fresh_values():
@@ -134,12 +199,240 @@ def test_local_cache_evicts_entries_to_respect_byte_limit():
     assert calls["second"] == 1
 
 
-def test_local_fallback_ignores_malformed_entries():
+def test_local_cache_does_not_store_oversized_or_unowned_entries():
+    backend = LocalCacheBackend(max_bytes=8)
+
+    assert backend.acquire("a", "owner", 30)
+    assert not backend.publish("a", "other", b"x", 30)
+    assert not backend.publish("a", "owner", b"x" * 8, 30)
+    assert backend.get("a") is None
+    backend.release("a", "other")
+    assert not backend.acquire("a", "other", 30)
+
+
+def test_local_cache_requires_positive_capacity():
+    with pytest.raises(ValueError, match="max_bytes"):
+        LocalCacheBackend(max_bytes=0)
+
+
+def test_local_cache_remember_keeps_newest_and_rejects_oversized_values():
+    backend = LocalCacheBackend(max_bytes=100)
+    newest = encoded_entry("new", loaded_at=101)
+    older = encoded_entry("old", loaded_at=100)
+
+    backend.remember("key", newest)
+    backend.remember("key", older)
+
+    assert backend.get("key") == newest
+    backend.remember("too-large", encoded_entry("x" * 200))
+    assert backend.get("too-large") is None
+
+
+def test_local_cache_remember_evicts_oldest_entry_to_stay_bounded():
+    backend = LocalCacheBackend(max_bytes=120)
+    first = encoded_entry("a" * 10, loaded_at=100)
+    second = encoded_entry("b" * 10, loaded_at=101)
+
+    backend.remember("first", first)
+    backend.remember("second", second)
+
+    assert backend.get("first") is None
+    assert backend.get("second") == second
+
+
+def test_local_cache_replaces_malformed_fallback_entry():
+    backend = LocalCacheBackend(max_bytes=1024)
+    assert backend.acquire("key", "owner", 30)
+    assert backend.publish("key", "owner", b"not json", 30)
+    backend.release("key", "owner")
+    replacement = encoded_entry("recovered")
+
+    backend.remember("key", replacement)
+
+    assert backend.get("key") == replacement
+
+
+@pytest.mark.parametrize("raw", [b"[]", b"invalid json", b'{}', b'{"version":1,"loaded_at":"bad"}'])
+def test_local_fallback_ignores_malformed_entries(raw):
     backend = LocalCacheBackend(max_bytes=1024)
 
-    backend.remember("bad", b"[]")
+    backend.remember("bad", raw)
 
     assert backend.get("bad") is None
+
+
+def test_local_cache_replaces_expired_lease(monkeypatch):
+    monotonic = [100.0]
+    monkeypatch.setattr("app.cache.time.monotonic", lambda: monotonic[0])
+    backend = LocalCacheBackend(max_bytes=100)
+
+    assert backend.acquire("key", "first", 5)
+    monotonic[0] += 6
+    assert backend.acquire("key", "second", 5)
+    assert not backend.publish("key", "first", b"expired", 30)
+    assert backend.publish("key", "second", b"current", 30)
+
+
+@pytest.mark.parametrize(
+    ("namespace", "freshness", "max_stale", "wait", "lease", "backoff"),
+    [
+        ("", 1, 1, 1, 1, 1),
+        ("test", 0, 1, 1, 1, 1),
+        ("test", 2, 1, 1, 1, 1),
+        ("test", 1, 1, 0, 1, 1),
+        ("test", 1, 1, 1, 0, 1),
+        ("test", 1, 1, 1, 1, 0),
+    ],
+)
+def test_cache_rejects_invalid_policy(namespace, freshness, max_stale, wait, lease, backoff):
+    with pytest.raises(ValueError):
+        Cache(
+            LocalCacheBackend(max_bytes=100),
+            namespace=namespace,
+            freshness_seconds=freshness,
+            max_stale_seconds=max_stale,
+            wait_timeout_seconds=wait,
+            lease_seconds=lease,
+            retry_backoff_seconds=backoff,
+        )
+
+
+@pytest.mark.parametrize(
+    "raw",
+    [
+        b"invalid json",
+        b"[]",
+        b'{"version":2}',
+        b'{"version":1,"loaded_at":"bad"}',
+        b'{"version":1,"loaded_at":100,"value":NaN}',
+    ],
+)
+def test_cache_discards_malformed_entries_and_reloads(raw):
+    backend = LocalCacheBackend(max_bytes=1024)
+    assert backend.acquire("test:key", "owner", 30)
+    assert backend.publish("test:key", "owner", raw, 30)
+    backend.release("test:key", "owner")
+    cache = Cache(
+        backend,
+        namespace="test",
+        freshness_seconds=10,
+        max_stale_seconds=30,
+        wait_timeout_seconds=0.1,
+    )
+
+    assert cache.get_or_load("key", lambda: {"valid": True}) == {"valid": True}
+
+
+def test_cache_rejects_empty_key_and_non_json_values():
+    cache = make_cache(Clock())
+    with pytest.raises(ValueError, match="key"):
+        cache.get_or_load("", lambda: None)
+    with pytest.raises(CacheUnavailable):
+        cache.get_or_load("bad", lambda: object())
+
+
+def test_cache_reports_cold_miss_when_another_loader_holds_lease(monkeypatch):
+    backend = LocalCacheBackend(max_bytes=1024)
+    assert backend.acquire("test:key", "other-worker", 30)
+    cache = Cache(
+        backend,
+        namespace="test",
+        freshness_seconds=10,
+        max_stale_seconds=30,
+        wait_timeout_seconds=0.01,
+    )
+    monkeypatch.setattr("app.cache.time.sleep", lambda _duration: None)
+
+    with pytest.raises(CacheUnavailable, match="timeout"):
+        cache.get_or_load("key", lambda: None)
+
+
+def test_redis_backend_reads_publishes_and_releases_leases():
+    client = FakeRedis()
+    fallback = LocalCacheBackend(max_bytes=1024)
+    backend = RedisCacheBackend(client, key_prefix="test", fallback=fallback)
+    payload = encoded_entry({"shared": True})
+
+    assert backend.get("key") is None
+    assert backend.acquire("key", "owner", 30)
+    assert not backend.acquire("key", "other", 30)
+    assert backend.publish("key", "owner", payload, 60)
+    assert backend.get("key") == payload
+    assert fallback.get("key") == payload
+
+    assert backend.acquire("key", "owner", 30)
+    backend.release("key", "owner", retry_after_seconds=5)
+    assert not backend.acquire("key", "other", 30)
+    backend.release("key", "owner")
+    assert backend.acquire("key", "other", 30)
+    backend.close()
+
+    assert client.closed
+
+
+def test_redis_backend_handles_errors_and_uses_local_fallback():
+    client = FakeRedis()
+    fallback = LocalCacheBackend(max_bytes=1024)
+    backend = RedisCacheBackend(client, key_prefix="test", fallback=fallback)
+    payload = encoded_entry({"stale": True})
+    fallback.remember("key", payload)
+
+    assert backend.get("key") == payload
+    client.fail_on.update({"get", "set", "delete", "eval"})
+
+    assert backend.get("key") == payload
+    assert not backend.acquire("key", "owner", 30)
+    assert not backend.publish("new", "owner", payload, 60)
+    backend.release("key", "owner", retry_after_seconds=5)
+    backend.delete("key")
+
+    assert fallback.get("key") == payload
+
+
+def test_redis_backend_rejects_publish_without_owned_lease():
+    client = FakeRedis()
+    backend = RedisCacheBackend(
+        client, key_prefix="test", fallback=LocalCacheBackend(max_bytes=1024)
+    )
+
+    assert not backend.publish("key", "owner", encoded_entry("value"), 60)
+    assert backend.get("key") is None
+
+
+def test_redis_backend_requires_a_key_prefix():
+    with pytest.raises(ValueError, match="key_prefix"):
+        RedisCacheBackend(FakeRedis(), key_prefix="", fallback=LocalCacheBackend(max_bytes=10))
+
+
+def test_create_cache_selects_local_backend_by_default():
+    settings = Settings(db_url="sqlite:////tmp/library.sqlite")
+    cache = create_cache(settings)
+
+    assert cache.get_or_load("key", lambda: ["local"]) == ["local"]
+    cache.close()
+
+
+def test_create_cache_configures_redis_backend(monkeypatch):
+    from unittest.mock import Mock
+
+    from redis import Redis
+
+    client = FakeRedis()
+    from_url = Mock(return_value=client)
+    monkeypatch.setattr(Redis, "from_url", from_url)
+    settings = Settings(
+        db_url="postgresql+psycopg://user:secret@db/library",
+        cache_redis_url="redis://localhost:6379/15",
+        cache_namespace="shelf-a",
+    )
+    cache = create_cache(settings)
+
+    assert cache.get_or_load("key", lambda: ["redis"]) == ["redis"]
+    assert from_url.call_args.args == ("redis://localhost:6379/15",)
+    assert from_url.call_args.kwargs["decode_responses"] is False
+    assert from_url.call_args.kwargs["socket_timeout"] > 0
+    assert all("secret" not in key for key in client.values)
+    cache.close()
 
 
 def test_cache_namespace_excludes_credentials_and_separates_deployments():
@@ -158,19 +451,24 @@ def test_cache_namespace_excludes_credentials_and_separates_deployments():
     assert "secret" not in first
 
 
-def test_app_lifespan_exposes_and_closes_cache(configured, monkeypatch):
+def test_app_lifespan_exposes_and_closes_cache(monkeypatch):
+    import asyncio
     from unittest.mock import Mock
 
-    from fastapi.testclient import TestClient
-
     from app import main
+    from app.config import Settings
 
     cache = Mock()
+    settings = Settings(db_url="sqlite:////tmp/library.sqlite")
+    monkeypatch.setattr(main, "get_settings", lambda: settings)
     monkeypatch.setattr(main, "create_cache", lambda settings: cache, raising=False)
     app = main.create_app()
 
-    with TestClient(app) as client:
-        assert client.app.state.cache is cache
+    async def verify_lifespan():
+        async with app.router.lifespan_context(app):
+            assert app.state.cache is cache
+
+    asyncio.run(verify_lifespan())
 
     cache.close.assert_called_once_with()
 
