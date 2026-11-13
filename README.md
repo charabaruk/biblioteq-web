@@ -59,6 +59,10 @@ All settings are environment variables; see [.env.example](.env.example).
 | `BIBLIOTEQ_NATURAL_SORT_NUMBERS` | `integer` | `integer` or `decimal`: how digit runs in titles are compared |
 | `BIBLIOTEQ_DB_POOL_SIZE` / `BIBLIOTEQ_DB_MAX_OVERFLOW` | `5` / `5` | Connection pool per worker |
 | `BIBLIOTEQ_DB_STATEMENT_TIMEOUT_MS` | `5000` | PostgreSQL statement timeout; SQLite busy timeout |
+| `BIBLIOTEQ_CACHE_REDIS_URL` | empty | Optional Redis/Valkey URL for cache sharing across workers; empty uses worker-local memory |
+| `BIBLIOTEQ_CACHE_NAMESPACE` | `biblioteq-web` | Cache namespace; use the same value for workers in one deployment and a distinct value for each deployment sharing Redis |
+| `BIBLIOTEQ_CACHE_FRESHNESS_SECONDS` | `300` | Age before a cached value is refreshed |
+| `BIBLIOTEQ_CACHE_MAX_STALE_SECONDS` | `3600` | Maximum age at which a cached value may be served |
 | `BIBLIOTEQ_SITE_TITLE` | `Library Collection` | Title shown in the UI |
 | `BIBLIOTEQ_LOG_LEVEL` | `INFO` | Python log level |
 | `BIBLIOTEQ_ROOT_PATH` | empty | URL prefix when served under a sub-path |
@@ -95,6 +99,10 @@ BIBLIOTEQ_TEST_DB_URL=postgresql+psycopg://user:pw@localhost/scratch_db .venv/bi
 
 The integration tests drop and recreate the `public` schema of `BIBLIOTEQ_TEST_DB_URL`; use a disposable
 database. Without that variable they are skipped.
+
+Redis-protocol integration tests are opt-in and use only uniquely prefixed keys. For a local Redis or
+Valkey instance, set `BIBLIOTEQ_TEST_REDIS_URL` and run `.venv/bin/pytest -q tests/test_cache.py -m redis`.
+The normal test run does not require Redis and exercises the in-process cache backend.
 
 Translations are coordinated through [Crowdin](https://crowdin.com/project/biblioteq-web). To contribute, see [Localization and Internationalization](docs/localization.md).
 

@@ -1,9 +1,11 @@
+import os
 from concurrent.futures import ThreadPoolExecutor
 from threading import Event
+from uuid import uuid4
 
 import pytest
 
-from app.cache import Cache, CacheUnavailable, LocalCacheBackend
+from app.cache import Cache, CacheUnavailable, LocalCacheBackend, make_cache_namespace
 
 
 class Clock:
@@ -130,3 +132,144 @@ def test_local_cache_evicts_entries_to_respect_byte_limit():
 
     assert calls["first"] == 2
     assert calls["second"] == 1
+
+
+def test_local_fallback_ignores_malformed_entries():
+    backend = LocalCacheBackend(max_bytes=1024)
+
+    backend.remember("bad", b"[]")
+
+    assert backend.get("bad") is None
+
+
+def test_cache_namespace_excludes_credentials_and_separates_deployments():
+    first = make_cache_namespace(
+        "postgresql+psycopg://reader:secret-one@db/library", "public", "shelf-a"
+    )
+    same_database = make_cache_namespace(
+        "postgresql+psycopg://reader:secret-two@db/library", "public", "shelf-a"
+    )
+    other_deployment = make_cache_namespace(
+        "postgresql+psycopg://reader:secret-one@db/library", "public", "shelf-b"
+    )
+
+    assert first == same_database
+    assert first != other_deployment
+    assert "secret" not in first
+
+
+def test_app_lifespan_exposes_and_closes_cache(configured, monkeypatch):
+    from unittest.mock import Mock
+
+    from fastapi.testclient import TestClient
+
+    from app import main
+
+    cache = Mock()
+    monkeypatch.setattr(main, "create_cache", lambda settings: cache, raising=False)
+    app = main.create_app()
+
+    with TestClient(app) as client:
+        assert client.app.state.cache is cache
+
+    cache.close.assert_called_once_with()
+
+
+@pytest.mark.redis
+def test_redis_cache_shares_values_and_coordinates_loads():
+    redis_url = os.environ.get("BIBLIOTEQ_TEST_REDIS_URL")
+    if not redis_url:
+        pytest.skip("BIBLIOTEQ_TEST_REDIS_URL is not set")
+
+    from redis import Redis
+
+    from app.cache import RedisCacheBackend
+
+    prefix = f"test-cache:{uuid4().hex}"
+    first_client = Redis.from_url(redis_url, decode_responses=False)
+    second_client = Redis.from_url(redis_url, decode_responses=False)
+    first_backend = RedisCacheBackend(
+        first_client, key_prefix=prefix, fallback=LocalCacheBackend(max_bytes=4096)
+    )
+    second_backend = RedisCacheBackend(
+        second_client, key_prefix=prefix, fallback=LocalCacheBackend(max_bytes=4096)
+    )
+    clock = Clock()
+    first = Cache(
+        first_backend,
+        namespace="shared",
+        freshness_seconds=30,
+        max_stale_seconds=60,
+        wait_timeout_seconds=1,
+        clock=clock,
+    )
+    second = Cache(
+        second_backend,
+        namespace="shared",
+        freshness_seconds=30,
+        max_stale_seconds=60,
+        wait_timeout_seconds=1,
+        clock=clock,
+    )
+    calls = 0
+
+    def load():
+        nonlocal calls
+        calls += 1
+        return {"snapshot": ["shared"]}
+
+    try:
+        assert first.get_or_load("items", load) == {"snapshot": ["shared"]}
+        assert second.get_or_load("items", load) == {"snapshot": ["shared"]}
+        assert calls == 1
+
+        assert first_backend.acquire("lease", "owner-one", 30)
+        assert not second_backend.acquire("lease", "owner-two", 30)
+        assert not second_backend.publish("lease", "owner-two", b"bad", 60)
+        first_backend.delete("lease")
+        assert not second_backend.acquire("lease", "owner-two", 30)
+
+        from redis.exceptions import ConnectionError as RedisConnectionError
+
+        class OfflineClient:
+            def get(self, key):
+                raise RedisConnectionError("offline")
+
+            def set(self, *args, **kwargs):
+                raise RedisConnectionError("offline")
+
+            def eval(self, *args):
+                raise RedisConnectionError("offline")
+
+            def close(self):
+                return None
+
+        first_client.close()
+        first_backend._client = OfflineClient()
+        clock.now += 31
+        assert first.get_or_load("items", load) == {"snapshot": ["shared"]}
+        assert calls == 1
+
+        unavailable = Cache(
+            RedisCacheBackend(
+                OfflineClient(),
+                key_prefix=prefix,
+                fallback=LocalCacheBackend(max_bytes=4096),
+            ),
+            namespace="shared",
+            freshness_seconds=30,
+            max_stale_seconds=60,
+            wait_timeout_seconds=0.02,
+        )
+        try:
+            with pytest.raises(CacheUnavailable):
+                unavailable.get_or_load("cold", load)
+        finally:
+            unavailable.close()
+        assert calls == 1
+    finally:
+        first.close()
+        second.close()
+        for key in second_client.scan_iter(match=f"{prefix}:*"):
+            second_client.delete(key)
+        second_client.close()

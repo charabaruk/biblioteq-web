@@ -100,10 +100,12 @@ def test_natural_sort_numbers(monkeypatch):
 def test_cache_settings_defaults(monkeypatch):
     monkeypatch.setenv("BIBLIOTEQ_DB_URL", "postgresql+psycopg://u:p@h/d")
     monkeypatch.delenv("BIBLIOTEQ_CACHE_REDIS_URL", raising=False)
+    monkeypatch.delenv("BIBLIOTEQ_CACHE_NAMESPACE", raising=False)
     monkeypatch.delenv("BIBLIOTEQ_CACHE_FRESHNESS_SECONDS", raising=False)
     monkeypatch.delenv("BIBLIOTEQ_CACHE_MAX_STALE_SECONDS", raising=False)
     settings = load_settings()
     assert settings.cache_redis_url is None
+    assert settings.cache_namespace == "biblioteq-web"
     assert settings.cache_freshness_seconds == 300
     assert settings.cache_max_stale_seconds == 3600
 
@@ -111,10 +113,12 @@ def test_cache_settings_defaults(monkeypatch):
 def test_cache_settings_from_environment(monkeypatch):
     monkeypatch.setenv("BIBLIOTEQ_DB_URL", "postgresql+psycopg://u:p@h/d")
     monkeypatch.setenv("BIBLIOTEQ_CACHE_REDIS_URL", " redis://localhost:6379/15 ")
+    monkeypatch.setenv("BIBLIOTEQ_CACHE_NAMESPACE", " shelf-a ")
     monkeypatch.setenv("BIBLIOTEQ_CACHE_FRESHNESS_SECONDS", "60")
     monkeypatch.setenv("BIBLIOTEQ_CACHE_MAX_STALE_SECONDS", "600")
     settings = load_settings()
     assert settings.cache_redis_url == "redis://localhost:6379/15"
+    assert settings.cache_namespace == "shelf-a"
     assert settings.cache_freshness_seconds == 60
     assert settings.cache_max_stale_seconds == 600
 

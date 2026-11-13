@@ -1,5 +1,6 @@
 """Bounded cache for derived, read-only application data."""
 
+import hashlib
 import json
 import logging
 import time
@@ -9,12 +10,41 @@ from collections.abc import Callable
 from threading import Lock
 from typing import Protocol
 
+from redis.exceptions import RedisError
+from sqlalchemy.engine import make_url
+
+from app.config import Settings
+
 logger = logging.getLogger(__name__)
 
 _CACHE_FORMAT_VERSION = 1
 _DEFAULT_LEASE_SECONDS = 30
 _DEFAULT_POLL_INTERVAL_SECONDS = 0.01
 _DEFAULT_RETRY_BACKOFF_SECONDS = 5
+DEFAULT_CACHE_LOCAL_MAX_BYTES = 16 * 1024 * 1024
+_DEFAULT_CACHE_WAIT_TIMEOUT_SECONDS = 1.0
+_DEFAULT_REDIS_TIMEOUT_SECONDS = 1.0
+
+_PUBLISH_SCRIPT = """
+if redis.call('GET', KEYS[2]) == ARGV[1] then
+    redis.call('SET', KEYS[1], ARGV[2], 'PX', ARGV[3])
+    redis.call('DEL', KEYS[2])
+    return 1
+end
+return 0
+"""
+
+_RELEASE_SCRIPT = """
+if redis.call('GET', KEYS[1]) == ARGV[1] then
+    if tonumber(ARGV[2]) > 0 then
+        redis.call('PEXPIRE', KEYS[1], ARGV[2])
+    else
+        redis.call('DEL', KEYS[1])
+    end
+    return 1
+end
+return 0
+"""
 
 
 class CacheUnavailable(RuntimeError):
@@ -86,6 +116,30 @@ class LocalCacheBackend:
             self._entries[key] = value
             self._entry_bytes += entry_size
             return True
+
+    def remember(self, key: str, value: bytes) -> None:
+        """Keep the newest shared snapshot as a bounded local fallback."""
+        loaded_at = _loaded_at(value)
+        if loaded_at is None:
+            return
+        key_size = len(key.encode("utf-8"))
+        entry_size = key_size + len(value)
+        if entry_size > self._max_bytes:
+            return
+
+        with self._lock:
+            current = self._entries.get(key)
+            if current is not None:
+                current_loaded_at = _loaded_at(current)
+                if current_loaded_at is not None and current_loaded_at >= loaded_at:
+                    self._entries.move_to_end(key)
+                    return
+            self._remove(key)
+            while self._entries and self._entry_bytes + entry_size > self._max_bytes:
+                oldest = next(iter(self._entries))
+                self._remove(oldest)
+            self._entries[key] = value
+            self._entry_bytes += entry_size
 
     def release(self, key: str, owner: str, retry_after_seconds: int = 0) -> None:
         with self._lock:
@@ -182,7 +236,11 @@ class Cache:
             self._backend.publish(key, owner, payload, self._max_stale_seconds)
         except Exception as exc:
             self._backend.release(key, owner, self._retry_backoff_seconds)
-            logger.warning("Cache refresh failed for key %s (%s)", key, type(exc).__name__)
+            logger.warning(
+                "Cache refresh failed for key %s (%s)",
+                _cache_key_for_log(key),
+                type(exc).__name__,
+            )
             if has_stale_value:
                 return stale_value
             raise CacheUnavailable("cache value is unavailable") from exc
@@ -215,3 +273,144 @@ class Cache:
             allow_nan=False,
             separators=(",", ":"),
         ).encode("utf-8")
+
+
+class RedisCacheBackend:
+    """Redis-protocol storage with bounded worker-local last-known-good values."""
+
+    def __init__(self, client, *, key_prefix: str, fallback: LocalCacheBackend):
+        if not key_prefix:
+            raise ValueError("key_prefix must not be empty")
+        self._client = client
+        self._key_prefix = key_prefix.rstrip(":")
+        self._fallback = fallback
+
+    def get(self, key: str) -> bytes | None:
+        data_key, _ = self._keys(key)
+        try:
+            value = self._client.get(data_key)
+        except RedisError as exc:
+            logger.warning("Redis cache read failed (%s)", type(exc).__name__)
+            return self._fallback.get(key)
+        if value is None:
+            return self._fallback.get(key)
+        self._fallback.remember(key, value)
+        return value
+
+    def delete(self, key: str) -> None:
+        data_key, _ = self._keys(key)
+        try:
+            self._client.delete(data_key)
+        except RedisError as exc:
+            logger.warning("Redis cache delete failed (%s)", type(exc).__name__)
+
+    def acquire(self, key: str, owner: str, lease_seconds: int) -> bool:
+        _, lock_key = self._keys(key)
+        try:
+            return bool(self._client.set(lock_key, owner, nx=True, px=lease_seconds * 1000))
+        except RedisError as exc:
+            logger.warning("Redis cache lease failed (%s)", type(exc).__name__)
+            return False
+
+    def publish(self, key: str, owner: str, value: bytes, ttl_seconds: int) -> bool:
+        data_key, lock_key = self._keys(key)
+        try:
+            published = bool(
+                self._client.eval(
+                    _PUBLISH_SCRIPT,
+                    2,
+                    data_key,
+                    lock_key,
+                    owner,
+                    value,
+                    ttl_seconds * 1000,
+                )
+            )
+        except RedisError as exc:
+            logger.warning("Redis cache publish failed (%s)", type(exc).__name__)
+            self._fallback.remember(key, value)
+            return False
+        if published:
+            self._fallback.remember(key, value)
+        return published
+
+    def release(self, key: str, owner: str, retry_after_seconds: int = 0) -> None:
+        _, lock_key = self._keys(key)
+        try:
+            self._client.eval(
+                _RELEASE_SCRIPT,
+                1,
+                lock_key,
+                owner,
+                retry_after_seconds * 1000,
+            )
+        except RedisError as exc:
+            logger.warning("Redis cache lease release failed (%s)", type(exc).__name__)
+
+    def close(self) -> None:
+        self._client.close()
+
+    def _keys(self, key: str) -> tuple[str, str]:
+        digest = hashlib.sha256(key.encode("utf-8")).hexdigest()
+        base = f"{self._key_prefix}:{digest}"
+        return f"{base}:data", f"{base}:lease"
+
+
+def _loaded_at(value: bytes) -> float | None:
+    try:
+        entry = json.loads(value)
+        if not isinstance(entry, dict):
+            return None
+        loaded_at = entry.get("loaded_at")
+        if (
+            entry.get("version") == _CACHE_FORMAT_VERSION
+            and isinstance(loaded_at, (int, float))
+        ):
+            return float(loaded_at)
+    except (TypeError, ValueError, UnicodeDecodeError, json.JSONDecodeError):
+        return None
+    return None
+
+
+def _cache_key_for_log(key: str) -> str:
+    return hashlib.sha256(key.encode("utf-8")).hexdigest()[:12]
+
+
+def make_cache_namespace(db_url: str, schema: str, deployment: str) -> str:
+    """Return a stable, credential-free namespace for one deployment and database."""
+    url = make_url(db_url).set(username=None, password=None, query={})
+    database_identity = url.render_as_string(hide_password=True)
+    database_hash = hashlib.sha256(database_identity.encode("utf-8")).hexdigest()[:20]
+    safe_deployment = hashlib.sha256(deployment.encode("utf-8")).hexdigest()[:12]
+    safe_schema = hashlib.sha256(schema.encode("utf-8")).hexdigest()[:12]
+    return f"biblioteq:v{_CACHE_FORMAT_VERSION}:{safe_deployment}:{safe_schema}:{database_hash}"
+
+
+def create_cache(settings: Settings) -> Cache:
+    """Create the configured per-worker cache without requiring Redis at startup."""
+    namespace = make_cache_namespace(
+        settings.db_url, settings.db_schema, settings.cache_namespace
+    )
+    if settings.cache_redis_url:
+        from redis import Redis
+
+        client = Redis.from_url(
+            settings.cache_redis_url,
+            decode_responses=False,
+            socket_timeout=_DEFAULT_REDIS_TIMEOUT_SECONDS,
+            socket_connect_timeout=_DEFAULT_REDIS_TIMEOUT_SECONDS,
+        )
+        backend = RedisCacheBackend(
+            client,
+            key_prefix=namespace,
+            fallback=LocalCacheBackend(DEFAULT_CACHE_LOCAL_MAX_BYTES),
+        )
+    else:
+        backend = LocalCacheBackend(DEFAULT_CACHE_LOCAL_MAX_BYTES)
+    return Cache(
+        backend,
+        namespace=namespace,
+        freshness_seconds=settings.cache_freshness_seconds,
+        max_stale_seconds=settings.cache_max_stale_seconds,
+        wait_timeout_seconds=_DEFAULT_CACHE_WAIT_TIMEOUT_SECONDS,
+    )

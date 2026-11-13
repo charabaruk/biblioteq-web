@@ -32,6 +32,7 @@ class Settings:
     default_lang: str = "en"
     sqlite_ext_icu_path: str | None = None
     cache_redis_url: str | None = None
+    cache_namespace: str = "biblioteq-web"
     cache_freshness_seconds: int = DEFAULT_CACHE_FRESHNESS_SECONDS
     cache_max_stale_seconds: int = DEFAULT_CACHE_MAX_STALE_SECONDS
 
@@ -88,6 +89,7 @@ def load_settings() -> Settings:
     if cache_max_stale < cache_freshness:
         raise ConfigError("BIBLIOTEQ_CACHE_MAX_STALE_SECONDS must be >= cache freshness")
     cache_redis_url = os.environ.get("BIBLIOTEQ_CACHE_REDIS_URL", "").strip() or None
+    cache_namespace = os.environ.get("BIBLIOTEQ_CACHE_NAMESPACE", "").strip() or "biblioteq-web"
     return Settings(
         db_url=db_url,
         db_schema=schema,
@@ -103,6 +105,7 @@ def load_settings() -> Settings:
         default_lang=os.environ.get("DEFAULT_LANG", "en").strip().replace("_", "-"),
         sqlite_ext_icu_path=icu_path,
         cache_redis_url=cache_redis_url,
+        cache_namespace=cache_namespace,
         cache_freshness_seconds=cache_freshness,
         cache_max_stale_seconds=cache_max_stale,
     )
