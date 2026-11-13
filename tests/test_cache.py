@@ -252,7 +252,7 @@ def test_local_cache_replaces_malformed_fallback_entry():
     assert backend.get("key") == replacement
 
 
-@pytest.mark.parametrize("raw", [b"[]", b"invalid json", b'{}', b'{"version":1,"loaded_at":"bad"}'])
+@pytest.mark.parametrize("raw", [b"[]", b"invalid json", b"{}", b'{"version":1,"loaded_at":"bad"}'])
 def test_local_fallback_ignores_malformed_entries(raw):
     backend = LocalCacheBackend(max_bytes=1024)
 
