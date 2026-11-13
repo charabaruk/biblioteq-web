@@ -362,10 +362,7 @@ def _loaded_at(value: bytes) -> float | None:
         if not isinstance(entry, dict):
             return None
         loaded_at = entry.get("loaded_at")
-        if (
-            entry.get("version") == _CACHE_FORMAT_VERSION
-            and isinstance(loaded_at, (int, float))
-        ):
+        if entry.get("version") == _CACHE_FORMAT_VERSION and isinstance(loaded_at, (int, float)):
             return float(loaded_at)
     except (TypeError, ValueError, UnicodeDecodeError, json.JSONDecodeError):
         return None
@@ -388,9 +385,7 @@ def make_cache_namespace(db_url: str, schema: str, deployment: str) -> str:
 
 def create_cache(settings: Settings) -> Cache:
     """Create the configured per-worker cache without requiring Redis at startup."""
-    namespace = make_cache_namespace(
-        settings.db_url, settings.db_schema, settings.cache_namespace
-    )
+    namespace = make_cache_namespace(settings.db_url, settings.db_schema, settings.cache_namespace)
     if settings.cache_redis_url:
         from redis import Redis
 

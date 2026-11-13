@@ -82,9 +82,7 @@ def load_settings() -> Settings:
     icu_path = os.environ.get("BIBLIOTEQ_SQLITE_EXT_ICU_PATH")
     if icu_path and not os.path.exists(icu_path):
         raise ConfigError("BIBLIOTEQ_SQLITE_EXT_ICU_PATH must point to an existing file")
-    cache_freshness = _int(
-        "BIBLIOTEQ_CACHE_FRESHNESS_SECONDS", DEFAULT_CACHE_FRESHNESS_SECONDS
-    )
+    cache_freshness = _int("BIBLIOTEQ_CACHE_FRESHNESS_SECONDS", DEFAULT_CACHE_FRESHNESS_SECONDS)
     cache_max_stale = _int("BIBLIOTEQ_CACHE_MAX_STALE_SECONDS", DEFAULT_CACHE_MAX_STALE_SECONDS)
     if cache_max_stale < cache_freshness:
         raise ConfigError("BIBLIOTEQ_CACHE_MAX_STALE_SECONDS must be >= cache freshness")

@@ -123,9 +123,7 @@ def test_cache_settings_from_environment(monkeypatch):
     assert settings.cache_max_stale_seconds == 600
 
 
-@pytest.mark.parametrize(
-    ("freshness", "max_stale"), [("0", "3600"), ("300", "0"), ("301", "300")]
-)
+@pytest.mark.parametrize(("freshness", "max_stale"), [("0", "3600"), ("300", "0"), ("301", "300")])
 def test_cache_timeouts_must_be_positive_and_consistent(monkeypatch, freshness, max_stale):
     monkeypatch.setenv("BIBLIOTEQ_DB_URL", "postgresql+psycopg://u:p@h/d")
     monkeypatch.setenv("BIBLIOTEQ_CACHE_FRESHNESS_SECONDS", freshness)
