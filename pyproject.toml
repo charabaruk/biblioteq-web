@@ -21,7 +21,10 @@ extend-immutable-calls = ["fastapi.Depends", "fastapi.Query", "fastapi.Path"]
 testpaths = ["tests"]
 pythonpath = ["."]
 addopts = "-m 'not a11y'"
-markers = ["a11y: browser-based accessibility tests, run with -m a11y (see docs/testing.md)"]
+markers = [
+	"a11y: browser-based accessibility tests, run with -m a11y (see docs/testing.md)",
+	"redis: integration tests requiring a Redis-protocol server",
+]
 
 [tool.djlint]
 profile = "jinja"

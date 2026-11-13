@@ -1,12 +1,15 @@
 """Application entrypoint: `uvicorn app.main:app`."""
 
 import logging
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.exceptions import HTTPException
 
+from app.cache import create_cache
 from app.config import get_settings
 from app.locale import LanguageMiddleware
 from app.routes import covers, health, pages
@@ -18,12 +21,23 @@ def create_app() -> FastAPI:
     logging.basicConfig(
         level=settings.log_level, format="%(asctime)s %(levelname)s %(name)s: %(message)s"
     )
+
+    @asynccontextmanager
+    async def lifespan(app: FastAPI) -> AsyncIterator[None]:
+        cache = create_cache(get_settings())
+        app.state.cache = cache
+        try:
+            yield
+        finally:
+            cache.close()
+
     app = FastAPI(
         title="biblioteq-web",
         root_path=settings.root_path,
         docs_url=None,
         redoc_url=None,
         openapi_url=None,
+        lifespan=lifespan,
     )
     app.mount("/static", StaticFiles(directory=BASE_DIR / "static"), name="static")
     app.include_router(health.router)

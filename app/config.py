@@ -12,6 +12,10 @@ class ConfigError(RuntimeError):
     pass
 
 
+DEFAULT_CACHE_FRESHNESS_SECONDS = 300
+DEFAULT_CACHE_MAX_STALE_SECONDS = 3600
+
+
 @dataclass(frozen=True)
 class Settings:
     db_url: str
@@ -27,6 +31,10 @@ class Settings:
     natural_sort_numbers: str = "integer"  # "integer" or "decimal"
     default_lang: str = "en"
     sqlite_ext_icu_path: str | None = None
+    cache_redis_url: str | None = None
+    cache_namespace: str = "biblioteq-web"
+    cache_freshness_seconds: int = DEFAULT_CACHE_FRESHNESS_SECONDS
+    cache_max_stale_seconds: int = DEFAULT_CACHE_MAX_STALE_SECONDS
 
     @property
     def title_sort(self) -> str | None:
@@ -74,6 +82,12 @@ def load_settings() -> Settings:
     icu_path = os.environ.get("BIBLIOTEQ_SQLITE_EXT_ICU_PATH")
     if icu_path and not os.path.exists(icu_path):
         raise ConfigError("BIBLIOTEQ_SQLITE_EXT_ICU_PATH must point to an existing file")
+    cache_freshness = _int("BIBLIOTEQ_CACHE_FRESHNESS_SECONDS", DEFAULT_CACHE_FRESHNESS_SECONDS)
+    cache_max_stale = _int("BIBLIOTEQ_CACHE_MAX_STALE_SECONDS", DEFAULT_CACHE_MAX_STALE_SECONDS)
+    if cache_max_stale < cache_freshness:
+        raise ConfigError("BIBLIOTEQ_CACHE_MAX_STALE_SECONDS must be >= cache freshness")
+    cache_redis_url = os.environ.get("BIBLIOTEQ_CACHE_REDIS_URL", "").strip() or None
+    cache_namespace = os.environ.get("BIBLIOTEQ_CACHE_NAMESPACE", "").strip() or "biblioteq-web"
     return Settings(
         db_url=db_url,
         db_schema=schema,
@@ -88,6 +102,10 @@ def load_settings() -> Settings:
         natural_sort_numbers=sort_numbers,
         default_lang=os.environ.get("DEFAULT_LANG", "en").strip().replace("_", "-"),
         sqlite_ext_icu_path=icu_path,
+        cache_redis_url=cache_redis_url,
+        cache_namespace=cache_namespace,
+        cache_freshness_seconds=cache_freshness,
+        cache_max_stale_seconds=cache_max_stale,
     )
 
 

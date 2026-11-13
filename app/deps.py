@@ -6,6 +6,7 @@ from threading import Lock
 from fastapi import Depends, HTTPException, Request
 from sqlalchemy import Connection
 
+from app.cache import Cache
 from app.config import get_settings
 from app.db import get_conn
 from app.item_types import ItemType, localize_labels
@@ -13,6 +14,11 @@ from app.repository import Catalog, load_catalog
 
 _catalog: Catalog | None = None
 _lock = Lock()
+
+
+def get_cache(request: Request) -> Cache:
+    """Return the cache service owned by this application worker."""
+    return request.app.state.cache
 
 
 def get_catalog(conn: Connection = Depends(get_conn)) -> Catalog:
